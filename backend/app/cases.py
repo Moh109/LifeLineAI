@@ -117,6 +117,8 @@ def build_summary(c: dict) -> str:
     where = c.get("address") or c.get("landmark") or "location not given yet"
     area = f" ({c['neighborhood']})" if c.get("neighborhood") and c["neighborhood"] != "Houston area" else ""
     parts.append(f"{who} at {where}{area}.")
+    if c.get("age"):
+        parts.append(f"Age: {c['age']}.")
     water = normalize_water(c.get("water_level"))
     if water not in {"unknown", "none"}:
         parts.append(f"Water at {water}{' and rising' if c.get('water_rising') else ''}.")
@@ -214,14 +216,14 @@ def _with_score(fields: dict, context: dict | None = None) -> dict:
 INCOMING_KEYS = (
     "caller_name", "language", "address", "landmark", "people_count", "water_level", "water_rising",
     "vulnerable", "medical_needs", "injuries", "life_threatening", "critical_reason", "battery_pct",
-    "pets", "notes",
+    "pets", "notes", "age",
 )
 
 
 def normalize_incoming(raw: dict) -> dict:
     """Coerce whatever an agent/LLM sent into clean typed fields. Missing -> absent."""
     out: dict[str, Any] = {}
-    for key in ("caller_name", "language", "address", "landmark", "injuries", "pets", "notes", "critical_reason"):
+    for key in ("caller_name", "language", "address", "landmark", "injuries", "pets", "notes", "critical_reason", "age"):
         text = clean_str(raw.get(key))
         if text:
             out[key] = text

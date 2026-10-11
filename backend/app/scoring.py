@@ -58,6 +58,17 @@ def normalize_water(level: str | None) -> str:
     return "unknown"
 
 
+def vulnerable_words(case: dict) -> str:
+    """The vulnerable list plus what the caller's stated age implies: 65+ is elderly, 12 or under is a child."""
+    words = list(case.get("vulnerable") or [])
+    ages = [int(n) for n in re.findall(r"\b\d{1,3}\b", str(case.get("age") or "")) if int(n) <= 120]
+    if any(a >= 65 for a in ages):
+        words.append("elderly")
+    if any(a <= 12 for a in ages):
+        words.append("child")
+    return " ".join(words).lower()
+
+
 def case_text(case: dict) -> str:
     """Everything said or written about the case (caller turns, translation, notes, summary). Lowercase."""
     parts = [case.get(k) or "" for k in ("notes", "critical_reason", "injuries", "summary_en", "landmark")]
@@ -79,7 +90,7 @@ def flood_related(case: dict) -> bool:
 
 def cant_evacuate_alone(case: dict) -> bool:
     text = " ".join([*(case.get("vulnerable") or []), *(case.get("medical_needs") or []), case_text(case)]).lower()
-    vulnerable = " ".join(case.get("vulnerable") or []).lower()
+    vulnerable = vulnerable_words(case)
     limited = any(w in text for w in MOBILITY_WORDS) or any(
         w in vulnerable for w in VULNERABLE_GROUPS["elderly"] + VULNERABLE_GROUPS["disabled"])
     alone = case.get("people_count") == 1 or bool(re.search(r"\balone\b|by (him|her|them)sel(f|ves)", text))
@@ -114,7 +125,7 @@ def base_score(case: dict) -> tuple[int, list[str]]:
         points += 10
         reasons.append("Injury reported (+10)")
 
-    vulnerable_text = " ".join(case.get("vulnerable") or []).lower()
+    vulnerable_text = vulnerable_words(case)
     groups = [g for g, words in VULNERABLE_GROUPS.items() if any(w in vulnerable_text for w in words)]
     if groups:
         vp = min(16, 8 * len(groups))

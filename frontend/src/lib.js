@@ -87,6 +87,14 @@ export const SOURCE_TAGS = {
   dropped_call: 'Dropped call, rebuilt',
 }
 
+// Only flood cases show water depth: a depth was given, water is rising, or the backend scored it as a flood
+// (a gunshot or a sprained ankle with "no water" shouldn't talk about water at all)
+const DEPTHS = ['ankle', 'knee', 'waist', 'chest', 'roof']
+export function isWaterCase(c) {
+  return DEPTHS.includes(c.water_level) || Boolean(c.water_rising)
+    || (c.reasons || []).some((r) => r.startsWith('Unknown water level'))
+}
+
 export const WATER_WORDS = {
   ankle: 'Ankle-deep', knee: 'Knee-deep', waist: 'Waist-deep', chest: 'Chest-deep', roof: 'On the roof',
   none: 'No water', unknown: 'Depth unknown',

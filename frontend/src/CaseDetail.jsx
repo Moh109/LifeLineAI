@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import WaterGauge from './WaterGauge'
-import { SOURCE_TAGS, TRIAGE, UNITS, WATER_WORDS, api, clockTime, effectivePriority, getDispatchKey, labelFor, waitText } from './lib'
+import { SOURCE_TAGS, TRIAGE, UNITS, WATER_WORDS, api, clockTime, effectivePriority, getDispatchKey, isWaterCase, labelFor, waitText } from './lib'
 
 // Callback is ticked by default for Immediate and Urgent cases; for Delayed (yellow) the dispatcher opts in.
 const callBackByDefault = (c) => c.can_call_back && labelFor(effectivePriority(c)) !== 'yellow'
@@ -117,13 +117,13 @@ export default function CaseDetail({ c, now, onClose, onChanged, draft, setDraft
         {c.life_threatening && <p className="life life-big">Life-threatening{c.critical_reason ? `: ${c.critical_reason}` : ''}</p>}
 
         <div className="detail-where">
-          <WaterGauge level={c.water_level || 'unknown'} rising={c.water_rising} size={64} />
+          {isWaterCase(c) && <WaterGauge level={c.water_level || 'unknown'} rising={c.water_rising} size={64} />}
           <div>
             <p className="where big">{c.address || c.landmark || 'Location not given yet'}</p>
             {c.landmark && c.address && <p className="muted">{/^near\b/i.test(c.landmark) ? c.landmark : `Near ${c.landmark}`}</p>}
             <p className="muted">
-              {WATER_WORDS[c.water_level || 'unknown']}{c.water_rising ? ', rising' : ''}
-              {c.neighborhood ? `. ${c.neighborhood}` : ''}
+              {isWaterCase(c) ? `${WATER_WORDS[c.water_level || 'unknown']}${c.water_rising ? ', rising' : ''}. ` : ''}
+              {c.neighborhood || ''}
             </p>
           </div>
         </div>
@@ -208,6 +208,7 @@ export default function CaseDetail({ c, now, onClose, onChanged, draft, setDraft
           <Fact k="Phone" v={c.phone} />
           <Fact k="Language" v={c.language} />
           <Fact k="People" v={c.people_count} />
+          <Fact k="Age" v={c.age} />
           <Fact k="With them" v={(c.vulnerable || []).join(', ')} />
           <Fact k="Medical" v={(c.medical_needs || []).join(', ')} />
           <Fact k="Injuries" v={c.injuries} />

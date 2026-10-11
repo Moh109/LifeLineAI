@@ -62,6 +62,7 @@ create table if not exists cases (
 -- added after launch; "if not exists" keeps this safe on the existing table
 alter table cases add column if not exists needs_review boolean not null default false;
 alter table cases add column if not exists review_reason text;
+alter table cases add column if not exists age text;
 create index if not exists cases_phone_idx on cases (phone);
 create index if not exists cases_status_idx on cases (status);
 create index if not exists cases_conv_idx on cases using gin (conversation_ids);
@@ -85,7 +86,7 @@ CASE_COLUMNS = {
     "critical_reason", "battery_pct", "pets", "notes", "summary_en", "base_priority",
     "reasons", "status", "unit", "eta_minutes", "assigned_at", "resolved_at",
     "callback_status", "call_count", "transcript", "transcript_en", "enriched",
-    "created_at", "needs_review", "review_reason",
+    "created_at", "needs_review", "review_reason", "age",
 }
 
 

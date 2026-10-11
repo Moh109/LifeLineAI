@@ -58,6 +58,7 @@ Returns `known`, `case_number_spoken`, `caller_name`, `address`, `status`, `unit
 | `callback_number` | string | no | LLM prompt | `Callback number if different from caller ID.` |
 | `language` | string | no | LLM prompt | `Language you are speaking with the caller, e.g. English, Spanish, Vietnamese.` |
 | `people_count` | integer | no | LLM prompt | `Number of people at the location including the caller.` |
+| `age` | string | no | LLM prompt | `Ages of the people who need help, as the caller said them, e.g. 72 or me 40, my son 8. Empty if not said.` |
 | `water_level` | string | no | LLM prompt | `One of: none, ankle, knee, waist, chest, roof, unknown. Use none if water is not involved.` |
 | `water_rising` | boolean | no | LLM prompt | `True if the caller says the water is rising.` |
 | `vulnerable` | string | no | LLM prompt | `Comma-separated: elderly, baby, child, pregnant, disabled. Empty if none.` |

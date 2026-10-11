@@ -1,6 +1,6 @@
 import { memo, useMemo, useState } from 'react'
 import WaterGauge from './WaterGauge'
-import { SOURCE_TAGS, TRIAGE, WATER_WORDS, effectivePriority, labelFor, waitText } from './lib'
+import { SOURCE_TAGS, TRIAGE, WATER_WORDS, effectivePriority, isWaterCase, labelFor, waitText } from './lib'
 
 const TABS = [
   { id: 'open', name: 'Waiting', match: (c) => c.status === 'open' },
@@ -78,9 +78,9 @@ const CaseCard = memo(function CaseCard({ c, now, onSelect }) {
               {c.address || c.landmark || 'Location not given yet'}
               {c.neighborhood && c.neighborhood !== 'Houston area' && <span className="hood"> {c.neighborhood}</span>}
             </p>
-            {c.enriched && c.summary_en
+            {c.summary_en && (c.enriched || !isWaterCase(c))
               ? <p className="summary">{c.summary_en}</p>
-              : <p className="summary">{WATER_WORDS[c.water_level || 'unknown']}{c.water_rising ? ', rising' : ''}</p>}
+              : isWaterCase(c) && <p className="summary">{WATER_WORDS[c.water_level || 'unknown']}{c.water_rising ? ', rising' : ''}</p>}
             <ul className="chips">
               {c.needs_review && <li className="chip-review" title={c.review_reason || ''}>Needs review</li>}
               {c.people_count ? <li>{c.people_count} {c.people_count === 1 ? 'person' : 'people'}</li> : null}
@@ -94,7 +94,7 @@ const CaseCard = memo(function CaseCard({ c, now, onSelect }) {
             </ul>
             {c.status === 'assigned' && c.callback_status && <p className="callback">Callback: {c.callback_status}</p>}
           </div>
-          <WaterGauge level={c.water_level || 'unknown'} rising={c.water_rising} />
+          {isWaterCase(c) && <WaterGauge level={c.water_level || 'unknown'} rising={c.water_rising} />}
         </div>
       </button>
     </li>

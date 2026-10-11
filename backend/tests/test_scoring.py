@@ -87,3 +87,21 @@ def test_c_high_people_count_sets_needs_review_on_the_case():
     fields = _with_score({"people_count": 100, "notes": "House fire"})
     assert fields["needs_review"] is True and "people count" in fields["review_reason"]
     assert "needs_review" not in _with_score({"people_count": 3})
+
+
+def test_age_counts_as_elderly_or_child():
+    _, _, reasons = score(age="72", people_count=2)
+    assert "Vulnerable: elderly (+8)" in reasons
+    _, _, reasons = score(age="8 and 40", people_count=2)
+    assert "Vulnerable: baby or child (+8)" in reasons
+    _, _, reasons = score(age="35", people_count=1)
+    assert not any(r.startswith("Vulnerable") for r in reasons)
+    _, label, reasons = score(age="81", people_count=1, notes="sprained ankle")  # 81 and alone
+    assert any(r.startswith("Can't evacuate alone") for r in reasons) and label == "orange"
+
+
+def test_non_water_case_summary_never_mentions_water():
+    from app.cases import build_summary
+    s = build_summary({"people_count": 1, "address": "4173 Elgin St", "water_level": "none", "age": "30",
+                       "injuries": "sprained ankle"})
+    assert "water" not in s.lower() and "Age: 30." in s

@@ -61,6 +61,7 @@ class RescueExtraction(BaseModel):
     address: str = Field(default="", description="Street address or cross streets where people need rescue, empty if unknown")
     landmark: str = Field(default="", description="Nearby landmark, empty if none")
     people_count: int = Field(default=0, description="Number of people needing rescue, 0 if unknown")
+    age: str = Field(default="", description="Age(s) of the people who need help as stated, e.g. '72' or '8 and 40'. Empty if not said")
     water_level: str = Field(default="unknown", description="One of: none, ankle, knee, waist, chest, roof, unknown")
     water_rising: bool = Field(default=False)
     vulnerable: list[str] = Field(default_factory=list, description="Any of: elderly, baby, child, pregnant, disabled")
@@ -79,7 +80,8 @@ Read the {kind} below and extract ONLY facts the caller (or post author) actuall
 If something is not stated, leave it empty / unknown.
 Never infer injuries, medical needs, or a life threat. Only fill injuries, medical_needs and
 life_threatening if the caller said them in their own words. Questions the agent asked are not facts.
-Write summary_en for a dispatcher: who, where, how many, water level, the most urgent risk.
+Write summary_en for a dispatcher: what is happening, who (with ages if given), where, how many, the most urgent risk.
+Mention water or flooding in summary_en ONLY if the caller talked about water or flooding. Never write "no water".
 {translation_rule}
 
 {kind_title}:
