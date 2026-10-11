@@ -105,3 +105,13 @@ def test_non_water_case_summary_never_mentions_water():
     s = build_summary({"people_count": 1, "address": "4173 Elgin St", "water_level": "none", "age": "30",
                        "injuries": "sprained ankle"})
     assert "water" not in s.lower() and "Age: 30." in s
+
+
+def test_summary_water_sentences_dropped_for_non_water_calls():
+    from app.cases import strip_water_talk
+    s = ("Ryan is alone at 4173 Elgin Street with a sprained ankle. "
+         "There is no water involved and no life-threatening conditions reported.")
+    case = {"water_level": "none", "transcript": [{"role": "user", "message": "I sprained my ankle at soccer"}]}
+    assert strip_water_talk(s, case) == "Ryan is alone at 4173 Elgin Street with a sprained ankle."
+    flood = {"water_level": "knee", "transcript": [{"role": "user", "message": "water is at my knees"}]}
+    assert strip_water_talk("Water at knee level. Two people.", flood) == "Water at knee level. Two people."

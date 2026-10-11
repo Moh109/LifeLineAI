@@ -294,7 +294,9 @@ async def intake_text(body: IntakeTextBody):
         raise HTTPException(422, "No location found in that post.")
     phone = cases.normalize_phone(body.callback_number) or cases.normalize_phone(extraction.get("callback_number"))
     case = await cases.upsert_rescue(extraction, phone=phone, source="social",
-                                     enriched_summary=extraction.get("summary_en"))
+                                     enriched_summary=cases.strip_water_talk(
+                                         extraction.get("summary_en"),
+                                         {**extraction, "transcript": [{"role": "user", "message": body.text}]}))
     case = await db.update_case(case["id"], {"transcript": [{"role": "user", "message": body.text.strip(),
                                                              "call": "social"}]})
     await cases.ground(case["id"])  # the post text is the "caller" here

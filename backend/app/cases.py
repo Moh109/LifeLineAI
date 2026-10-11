@@ -10,7 +10,7 @@ from . import db, dedupe, elevenlabs, gemini, grounding, memory
 from .areas import area_mentioned, nearest_area
 from .geocode import geocode
 from .realtime import hub
-from .scoring import VERIFY_PEOPLE, base_score, has_injury, label_for, normalize_water, wait_bonus
+from .scoring import FLOOD_WORDS, VERIFY_PEOPLE, base_score, has_injury, label_for, normalize_water, wait_bonus
 
 log = logging.getLogger("lifeline.cases")
 
@@ -678,7 +678,7 @@ async def handle_post_call(event: dict) -> None:
         log.info("Dropped call %s had no usable rescue details", conversation_id)
         return
     case = await upsert_rescue(extraction, phone=phone, conversation_id=conversation_id, source="dropped_call",
-                               enriched_summary=extraction.get("summary_en"))
+                               enriched_summary=strip_water_talk(extraction.get("summary_en"), {**extraction, "transcript": lines}))
     await db.update_case(case["id"], {"transcript": lines,
                                       "transcript_en": _align_translation(extraction.get("transcript_en") or [], lines) or None})
     if duration:
@@ -687,6 +687,19 @@ async def handle_post_call(event: dict) -> None:
     refreshed = await db.get_case(case["id"])
     if refreshed:
         await publish(refreshed)
+
+
+def strip_water_talk(summary: str | None, case: dict) -> str | None:
+    """Drop summary sentences about water ("no water around") when the caller never mentioned water.
+    Gemini sometimes adds them even when told not to; non-water emergencies shouldn't talk about water."""
+    if not summary:
+        return summary
+    caller_said = " ".join(l.get("message", "") for l in case.get("transcript") or [] if l.get("role") == "user")
+    if normalize_water(case.get("water_level")) not in {"unknown", "none"} or case.get("water_rising") \
+            or FLOOD_WORDS.search(caller_said.lower()):
+        return summary
+    kept = [s for s in re.split(r"(?<=[.!?])\s+", summary.strip()) if not FLOOD_WORDS.search(s.lower())]
+    return " ".join(kept) or summary
 
 
 async def enrich(case_id: int, lines: list[dict]) -> None:
@@ -725,7 +738,7 @@ async def enrich(case_id: int, lines: list[dict]) -> None:
     fields["location_confidence"] = case.get("location_confidence")
     fields["enriched"] = True
     _with_score(fields, context=case)
-    fields["summary_en"] = extraction.get("summary_en") or build_summary(fields)
+    fields["summary_en"] = strip_water_talk(extraction.get("summary_en"), {**case, **fields}) or build_summary(fields)
     fields["enriched"] = True
     translated = _align_translation(extraction.get("transcript_en") or [], lines)
     if translated:
