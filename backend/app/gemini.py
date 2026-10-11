@@ -13,16 +13,40 @@ from . import config
 
 log = logging.getLogger("lifeline.gemini")
 
-_client = None
+_clients: dict[int, object] = {}
 
 
-def _get_client():
-    global _client
-    if _client is None and config.GEMINI_API_KEY:
+class QuotaExhausted(Exception):
+    """Every key is out of quota on both the main and the backup model."""
+
+
+def _client(i: int):
+    if i not in _clients:
         from google import genai
 
-        _client = genai.Client(api_key=config.GEMINI_API_KEY)
-    return _client
+        _clients[i] = genai.Client(api_key=config.GEMINI_API_KEYS[i])
+    return _clients[i]
+
+
+def _is_quota_error(exc: Exception) -> bool:
+    return getattr(exc, "code", None) == 429 or "RESOURCE_EXHAUSTED" in str(exc)
+
+
+async def _with_fallback(call):
+    """Run call(client, model). On a quota error, retry with the next key, then the backup model.
+    Logs key numbers (key 1, key 2...) only, never the key."""
+    models = [config.GEMINI_MODEL]
+    if config.GEMINI_BACKUP_MODEL and config.GEMINI_BACKUP_MODEL != config.GEMINI_MODEL:
+        models.append(config.GEMINI_BACKUP_MODEL)
+    for model in models:
+        for i in range(len(config.GEMINI_API_KEYS)):
+            try:
+                return await call(_client(i), model)
+            except Exception as exc:
+                if not _is_quota_error(exc):
+                    raise
+                log.warning("Gemini key %d is out of quota for %s; trying the next one", i + 1, model)
+    raise QuotaExhausted(f"all {len(config.GEMINI_API_KEYS)} Gemini keys are out of quota on {', '.join(models)}")
 
 
 class TranscriptLine(BaseModel):
@@ -62,14 +86,13 @@ Write summary_en for a dispatcher: who, where, how many, water level, the most u
 
 
 async def _generate(prompt: str) -> dict | None:
-    client = _get_client()
-    if not client:
+    if not config.GEMINI_API_KEYS:
         return None
     from google.genai import types
 
-    try:
+    async def structured(client, model):
         resp = await client.aio.models.generate_content(
-            model=config.GEMINI_MODEL,
+            model=model,
             contents=prompt,
             config=types.GenerateContentConfig(
                 response_mime_type="application/json",
@@ -78,16 +101,25 @@ async def _generate(prompt: str) -> dict | None:
             ),
         )
         return json.loads(resp.text)
-    except Exception as exc:
-        log.warning("Gemini structured call failed (%s); retrying with plain JSON", exc)
-    try:
+
+    async def plain(client, model):
         schema_hint = json.dumps(RescueExtraction.model_json_schema())
         resp = await client.aio.models.generate_content(
-            model=config.GEMINI_MODEL,
+            model=model,
             contents=prompt + "\nRespond with one JSON object matching this JSON schema:\n" + schema_hint,
             config=types.GenerateContentConfig(response_mime_type="application/json", temperature=0.1),
         )
         return json.loads(resp.text)
+
+    try:
+        return await _with_fallback(structured)
+    except QuotaExhausted as exc:
+        log.error("Gemini call failed: %s", exc)
+        return None
+    except Exception as exc:
+        log.warning("Gemini structured call failed (%s); retrying with plain JSON", exc)
+    try:
+        return await _with_fallback(plain)
     except Exception as exc:
         log.error("Gemini call failed: %s", exc)
         return None
@@ -129,17 +161,20 @@ async def extract_from_text(text: str) -> dict | None:
 
 
 async def translate(text: str, language: str) -> str | None:
-    client = _get_client()
-    if not client or not language or language.lower().startswith("english"):
+    if not config.GEMINI_API_KEYS or not language or language.lower().startswith("english"):
         return None
-    try:
-        resp = await client.aio.models.generate_content(
-            model=config.GEMINI_MODEL,
+
+    async def call(client, model):
+        return await client.aio.models.generate_content(
+            model=model,
             contents=(
                 f"Translate this phone greeting into {language}. Keep it warm and natural, "
                 f"keep numbers as they are, and reply with only the translation:\n\n{text}"
             ),
         )
+
+    try:
+        resp = await _with_fallback(call)
         return (resp.text or "").strip() or None
     except Exception as exc:
         log.warning("Gemini translate failed: %s", exc)

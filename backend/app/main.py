@@ -228,8 +228,8 @@ async def set_location(case_id: int, body: LocationBody):
 @app.post("/api/intake/text")
 async def intake_text(body: IntakeTextBody):
     """Paste a social media rescue post or text message; Gemini turns it into a case."""
-    if not config.GEMINI_API_KEY:
-        raise HTTPException(400, "Set GEMINI_API_KEY to use text intake")
+    if not config.GEMINI_API_KEYS:
+        raise HTTPException(400, "Set GEMINI_API_KEYS (or GEMINI_API_KEY) to use text intake")
     extraction = await gemini.extract_from_text(body.text)
     if not extraction:
         raise HTTPException(502, "Gemini could not read that post. Try again.")
