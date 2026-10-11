@@ -30,7 +30,7 @@ If your dashboard doesn't offer "Dynamic variable" for a body parameter, make it
 | `caller_phone` | string | yes | Dynamic variable | `system__caller_id` |
 | `conversation_id` | string | no | Dynamic variable | `system__conversation_id` |
 
-Returns `known`, `case_number_spoken`, `caller_name`, `address`, `status`, `unit`, `eta_minutes`, `history`, `say`.
+Returns `known`, `case_number_spoken`, `caller_name`, `address`, `status`, `unit`, `history`, `say`.
 
 ### 2. `flag_critical`
 

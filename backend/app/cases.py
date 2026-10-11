@@ -380,7 +380,7 @@ async def lookup(phone: str | None, conversation_id: str | None) -> dict:
 
     say = f"This caller already has open request case {case_number_spoken(case['id'])}."
     if case.get("status") == "assigned" and case.get("unit"):
-        say += f" {case['unit']} is assigned, about {case.get('eta_minutes') or 'unknown'} minutes away. Tell them."
+        say += " A team has been assigned. You may tell them a team has been assigned, but never give a time."
     else:
         say += " Not yet assigned. Ask only what changed and call submit_rescue_request with updates."
     return {
@@ -391,7 +391,6 @@ async def lookup(phone: str | None, conversation_id: str | None) -> dict:
         "address": case.get("address") or "",
         "status": case.get("status"),
         "unit": case.get("unit") or "",
-        "eta_minutes": case.get("eta_minutes"),
         "history": history[:5],
         "say": say,
     }
