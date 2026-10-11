@@ -48,8 +48,8 @@ npm run dev                                   # http://localhost:5173
 
 # fake calls (from project root, backend venv active)
 python scripts\fake_call.py --critical
-python scripts\fake_call.py --spanish --phone +18325550199
-python scripts\fake_call.py --repeat --phone +18325550199
+python scripts\fake_call.py --spanish --phone +15550000199
+python scripts\fake_call.py --repeat --phone +15550000199
 ```
 
 ## Production (deployed Oct 11)

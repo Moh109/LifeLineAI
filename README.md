@@ -10,7 +10,7 @@ Caller's phone ─▶ Twilio number ─▶ ElevenLabs intake agent ──tools�
        ◀── callback with ETA ── ElevenLabs callback agent ◀── assign ──┤
                                                                        ├─▶ Tiger Data (cases + call events)
                                 Dispatcher dashboard ◀── live updates ─┤─▶ Gemini (translate, summarize, fill gaps)
-                                                                       └─▶ Backboard (remembers callers)
+                                                                       └─▶ Backboard (optional caller memory, off in our build)
 ```
 
 ## What's in here
@@ -23,6 +23,9 @@ Caller's phone ─▶ Twilio number ─▶ ElevenLabs intake agent ──tools�
 | `backend/` | FastAPI app: agent tools, webhook, scoring, Gemini, Backboard, callbacks, surge simulator |
 | `frontend/` | Dispatcher dashboard (React + Leaflet) |
 | `scripts/fake_call.py` | Pretends to be ElevenLabs, so you can test without a phone |
+| `scripts/seed_demo.py` | Loads a clean 8-case demo set (asks before clearing) |
+| `scripts/rescore_cases.py`, `scripts/ground_cases.py` | Re-apply the scoring and grounding rules to existing cases (preview first, `--apply` to write) |
+| `backend/tests/` | pytest suite: run `.venv\Scripts\python.exe -m pytest` from `backend` |
 | `deploy/` | One-command Vultr setup with HTTPS on your domain |
 
 ---
@@ -93,12 +96,12 @@ npm run dev
 Open http://localhost:5173. In another terminal, from the project root:
 
 ```bash
-python scripts/fake_call.py --critical
-python scripts/fake_call.py --spanish --phone +18325550199
-python scripts/fake_call.py --repeat --phone +18325550199
+backend/.venv/Scripts/python.exe scripts/fake_call.py --critical
+backend/.venv/Scripts/python.exe scripts/fake_call.py --spanish --phone +15550000199
+backend/.venv/Scripts/python.exe scripts/fake_call.py --repeat --phone +15550000199
 ```
 
-**Check:** cases appear live, the critical one pops an alert, and the repeat caller shows "called 2x". Click **Run Harvey surge** and watch 300 calls fill the map.
+**Check:** cases appear live, the critical one pops an alert, and the repeat caller's case shows "2 reports". Click **Run Harvey surge** and watch 300 calls fill the map.
 
 ### Step 5: Connect the agent to the backend (Voice + Backend, 30 min)
 
@@ -134,12 +137,12 @@ Done in our build: `Lifeline Callback` agent and its `update_from_callback` tool
 
 **Check:** call in, open your case on the dashboard, click **Assign and call back**. Your phone rings with the ETA. This needs the upgraded Twilio account from Step 2; a trial account cannot place it.
 
-### Step 7: Gemini and Backboard (Backend, 15 min)
+### Step 7: Gemini and Backboard (Backend, 15 min; Backboard is optional and off in our build)
 
 - `GEMINI_API_KEY` turns on post-call translation and summaries, dropped-call recovery, and **Add from a post**. If the default model name errors, pick a current Flash model in AI Studio and set `GEMINI_MODEL`.
 - `BACKBOARD_API_KEY` turns on caller memory. On first start the backend creates an assistant and logs `BACKBOARD_ASSISTANT_ID=...`. Paste that into `.env` so memory survives restarts.
 
-**Check:** a Spanish call shows a **Show English** toggle on the transcript. A repeat caller's case shows **Earlier from this number**.
+**Check:** a Spanish call shows a **Show English** toggle on the transcript. With Backboard on, a repeat caller's case also shows **Earlier from this number**.
 
 ### Step 8: Deploy (Infra, 30 min, by midnight)
 
@@ -207,9 +210,9 @@ Gemini and the voice agent only pull out facts. The score is plain rules in `bac
 | --- | --- |
 | ElevenLabs | Two agents, live inbound and outbound phone calls on a real number, multilingual, four server tools, post-call webhook |
 | Gemini | Post-call translation and summary, filling gaps the agent missed, rebuilding dropped calls, turning social posts into cases |
-| Backboard | Remembers every caller across calls; shown in the agent's repeat-caller greeting and on the case |
+| Backboard | Not enabled in our deployment. The code is ready: set `BACKBOARD_API_KEY` to remember callers across calls |
 | Tiger Data | `call_events` hypertable, a real-time continuous aggregate `calls_per_minute`, live surge chart from `time_bucket` |
-| Vultr + GoDaddy Registry | Production host with HTTPS on the team domain |
+| Vultr | Production host (Ubuntu, systemd, Caddy with automatic HTTPS) at https://108.61.222.88.sslip.io |
 
 ## API
 

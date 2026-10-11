@@ -31,7 +31,7 @@ if env_path.exists():
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--url", default="http://localhost:8000")
-parser.add_argument("--phone", default="+17135550142")
+parser.add_argument("--phone", default="+15550000142")  # +1555 = fake, never called back
 parser.add_argument("--spanish", action="store_true")
 parser.add_argument("--critical", action="store_true")
 parser.add_argument("--repeat", action="store_true")
