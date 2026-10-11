@@ -58,7 +58,7 @@ Returns `known`, `case_number_spoken`, `caller_name`, `address`, `status`, `unit
 | `callback_number` | string | no | LLM prompt | `Callback number if different from caller ID.` |
 | `language` | string | no | LLM prompt | `Language you are speaking with the caller, e.g. English, Spanish, Vietnamese.` |
 | `people_count` | integer | no | LLM prompt | `Number of people at the location including the caller.` |
-| `water_level` | string | no | LLM prompt | `One of: none, ankle, knee, waist, chest, roof, unknown.` |
+| `water_level` | string | no | LLM prompt | `One of: none, ankle, knee, waist, chest, roof, unknown. Use none if water is not involved.` |
 | `water_rising` | boolean | no | LLM prompt | `True if the caller says the water is rising.` |
 | `vulnerable` | string | no | LLM prompt | `Comma-separated: elderly, baby, child, pregnant, disabled. Empty if none.` |
 | `medical_needs` | string | no | LLM prompt | `Comma-separated needs such as insulin, oxygen, dialysis, ventilator, medication. Empty if none.` |
@@ -66,7 +66,7 @@ Returns `known`, `case_number_spoken`, `caller_name`, `address`, `status`, `unit
 | `life_threatening` | boolean | no | LLM prompt | `True if anyone is not breathing, unconscious, bleeding heavily, or in water over their head.` |
 | `battery_pct` | integer | no | LLM prompt | `Phone battery percent if the caller said it.` |
 | `pets` | string | no | LLM prompt | `Pets at the location, e.g. 2 dogs. Empty if none.` |
-| `notes` | string | no | LLM prompt | `Anything else a rescue team should know, in English.` |
+| `notes` | string | no | LLM prompt | `Start with what is happening in a few words (e.g. Heart attack, House fire, Trapped by flood water), then anything else a rescue team should know, in English.` |
 
 Returns `case_number`, `case_number_spoken`, `priority_label`, `say`.
 
