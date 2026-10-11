@@ -52,6 +52,19 @@ python scripts\fake_call.py --spanish --phone +18325550199
 python scripts\fake_call.py --repeat --phone +18325550199
 ```
 
+## Production (deployed Oct 11)
+- **https://108.61.222.88.sslip.io** (Vultr, Ubuntu 24.04, Dallas). App in `/opt/lifeline`, systemd service `lifeline`,
+  Caddy for HTTPS (Let's Encrypt). Same Tiger Data DB as local, so local and prod see the same cases.
+- SSH: `ssh -i ~/.ssh/lifeline_vultr root@108.61.222.88` (key made for this project, no passphrase).
+- Ship code: push to GitHub, then on the server `cd /opt/lifeline && git pull && sudo bash deploy/setup_vultr.sh 108.61.222.88.sslip.io`.
+- Change secrets: edit local `backend/.env`, then
+  `scp -i ~/.ssh/lifeline_vultr backend/.env root@108.61.222.88:/opt/lifeline/backend/.env` and `systemctl restart lifeline`
+  (and `chmod 600` the file). Never paste .env into chat.
+- Logs: `ssh ... 'journalctl -u lifeline -n 100 --no-pager'`.
+- ElevenLabs: all 3 intake tools + post-call webhook point at prod. The webhook URL can't be edited via API
+  (PATCH ignores it), so the prod webhook is a new one, "intake-server" (id 99afcd38...). The old tunnel webhook
+  "intake" (70510ef4...) is no longer attached to the agent.
+
 ## Known gotchas
 - Values in `backend/.env` must NOT be quoted: `fake_call.py` doesn't strip quotes, so the secret won't match (401).
 - Gemini free tier = ~20 requests/day PER MODEL (429 RESOURCE_EXHAUSTED when used up, resets ~24h later).
