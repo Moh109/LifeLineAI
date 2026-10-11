@@ -35,7 +35,7 @@ BACKBOARD_API_KEY = _get("BACKBOARD_API_KEY")
 BACKBOARD_ASSISTANT_ID = _get("BACKBOARD_ASSISTANT_ID")
 
 GOOGLE_MAPS_API_KEY = _get("GOOGLE_MAPS_API_KEY")
-GEOCODER_CONTACT_EMAIL = _get("GEOCODER_CONTACT_EMAIL", "team@example.com")
+GEOCODER_CONTACT_EMAIL = _get("GEOCODER_CONTACT_EMAIL", "+https://github.com/Moh109/LifeLineAI")
 
 PORT = int(_get("PORT", "8000"))
 CORS_ORIGINS = [o.strip() for o in _get("CORS_ORIGINS", "http://localhost:5173").split(",") if o.strip()]

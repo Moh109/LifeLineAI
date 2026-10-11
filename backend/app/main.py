@@ -273,7 +273,7 @@ async def websocket(ws: WebSocket):
                                       default=str))
         while True:
             await ws.receive_text()  # keepalive pings from the dashboard
-    except WebSocketDisconnect:
+    except (WebSocketDisconnect, RuntimeError):  # newer Starlette raises a RuntimeError subclass if the tab closed mid-send
         pass
     finally:
         await hub.disconnect(ws)
