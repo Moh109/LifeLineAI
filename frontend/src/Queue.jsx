@@ -87,7 +87,7 @@ const CaseCard = memo(function CaseCard({ c, now, onSelect }) {
               {(c.vulnerable || []).map((v) => <li key={v}>{v}</li>)}
               {(c.medical_needs || []).map((m) => <li key={m} className="chip-med">{m}</li>)}
               {c.language && c.language !== 'English' && <li className="chip-lang">{c.language}</li>}
-              {c.call_count > 1 && <li>called {c.call_count}x</li>}
+              {c.call_count > 1 && <li className="chip-reports">{c.call_count} reports</li>}
               {c.location_confidence === 'approximate' && <li className="chip-warn">approx. pin</li>}
               {c.location_confidence === 'none' && (c.address || c.landmark) && <li className="chip-warn">not on map</li>}
               {SOURCE_TAGS[c.source] && <li className="chip-source">{SOURCE_TAGS[c.source]}</li>}

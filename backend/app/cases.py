@@ -6,7 +6,7 @@ import re
 from datetime import datetime, timezone
 from typing import Any
 
-from . import db, elevenlabs, gemini, grounding, memory
+from . import db, dedupe, elevenlabs, gemini, grounding, memory
 from .areas import area_mentioned, nearest_area
 from .geocode import geocode
 from .realtime import hub
@@ -338,6 +338,64 @@ async def locate(case_id: int) -> None:
                                                "base_priority", "reasons", "summary_en"}})
     if updated:
         await publish(updated)
+        if updated.get("location_confidence") == "high":
+            await merge_duplicates(case_id)
+
+
+async def merge_duplicates(case_id: int) -> None:
+    """If this newly located case is the same place as another active report, fold the newer one into
+    the older one. The newer case is closed with a pointer, never deleted. Rules live in dedupe.py."""
+    async with _case_lock:
+        case = await db.get_case(case_id)
+        if not case or not dedupe.mergeable(case):
+            return
+        rows = await db.pool.fetch(
+            "select * from cases where id <> $1 and source <> 'simulated' and status in ('open','assigned') "
+            "and location_confidence = 'high' and created_at > now() - interval '2 hours'", case_id)
+        target = dedupe.find_target(case, [dict(r) for r in rows])
+        if not target:
+            return
+        keep, drop = (target, case) if target["created_at"] <= case["created_at"] else (case, target)
+
+        fields: dict[str, Any] = {k: keep.get(k) if keep.get(k) not in (None, "", []) else drop.get(k)
+                                  for k in INCOMING_KEYS}
+        for key in ("vulnerable", "medical_needs"):
+            fields[key] = sorted(set(keep.get(key) or []) | set(drop.get(key) or []))
+        fields["life_threatening"] = bool(keep.get("life_threatening") or drop.get("life_threatening"))
+        reports = (keep.get("call_count") or 1) + (drop.get("call_count") or 1)
+        note = f"Reported by {reports} sources"
+        other_notes = re.sub(r"\s*\|?\s*Reported by \d+ sources\.?", "", fields.get("notes") or "").strip(" |")
+        fields["notes"] = f"{other_notes} | {note}." if other_notes else f"{note}."
+        fields.update(enriched=keep.get("enriched"), neighborhood=keep.get("neighborhood"), location_confidence="high")
+        transcript = list(keep.get("transcript") or []) + list(drop.get("transcript") or [])
+        transcript_en = list(keep.get("transcript_en") or []) + list(drop.get("transcript_en") or [])
+        _with_score(fields, context={**keep, "transcript": transcript, "transcript_en": transcript_en})
+
+        score = max(fields["base_priority"], keep.get("base_priority") or 0, drop.get("base_priority") or 0)
+        reasons = fields["reasons"] + [note]
+        if score > fields["base_priority"]:
+            reasons.append(f"Kept the higher priority ({score}) from the merged reports")
+        update = {k: fields[k] for k in INCOMING_KEYS}
+        update.update(
+            base_priority=score, reasons=reasons, call_count=reports, transcript=transcript,
+            transcript_en=transcript_en or None,
+            conversation_ids=sorted(set(keep.get("conversation_ids") or []) | set(drop.get("conversation_ids") or [])),
+            phone=keep.get("phone") or drop.get("phone"),
+            summary_en=keep["summary_en"] if keep.get("enriched") else fields["summary_en"],
+            needs_review=bool(keep.get("needs_review") or drop.get("needs_review")),
+            review_reason=keep.get("review_reason") or drop.get("review_reason"),
+        )
+        merged = await db.update_case(keep["id"], update)
+        closed = await db.update_case(drop["id"], {
+            "status": "closed", "resolved_at": datetime.now(timezone.utc), "conversation_ids": [],
+            "notes": f"{drop.get('notes') or ''} | Merged into {case_number(keep['id'])}".strip(" |")})
+    log.info("Merged %s into %s (%d reports)", case_number(drop["id"]), case_number(keep["id"]), reports)
+    if closed:
+        await publish(closed)
+    if merged:
+        await publish(merged)
+        if merged.get("life_threatening") and not keep.get("life_threatening"):
+            await hub.broadcast({"type": "alert", "level": "critical", "case": serialize(merged)})
 
 
 async def set_location(case_id: int, lat: float, lng: float) -> dict:

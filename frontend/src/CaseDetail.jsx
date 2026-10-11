@@ -172,7 +172,7 @@ export default function CaseDetail({ c, now, onClose, onChanged, draft, setDraft
           <Fact k="Injuries" v={c.injuries} />
           <Fact k="Pets" v={c.pets} />
           <Fact k="Phone battery" v={c.battery_pct != null ? `${c.battery_pct}%` : null} />
-          <Fact k="Calls" v={c.call_count > 1 ? `${c.call_count} calls` : null} />
+          <Fact k="Reports" v={c.call_count > 1 ? `${c.call_count} reports` : null} />
           <Fact k="Notes" v={c.notes} />
         </dl>
 
