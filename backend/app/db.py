@@ -93,7 +93,9 @@ async def _init_connection(conn: asyncpg.Connection) -> None:
 
 async def connect() -> None:
     global pool, HAS_TIMESCALE
-    pool = await asyncpg.create_pool(config.DATABASE_URL, min_size=1, max_size=10, init=_init_connection)
+    # Close idle connections after 60s: the cloud DB / network silently drops idle ones, which broke the next query
+    pool = await asyncpg.create_pool(config.DATABASE_URL, min_size=1, max_size=10, init=_init_connection,
+                                     max_inactive_connection_lifetime=60)
     async with pool.acquire() as conn:
         await conn.execute(SCHEMA)
         HAS_TIMESCALE = await _setup_timescale(conn)
