@@ -31,8 +31,15 @@ VULNERABLE_GROUPS = {
 
 # Someone who can't get out on their own: these words anywhere in the case, or elderly/disabled, AND alone
 MOBILITY_WORDS = ("wheelchair", "bedbound", "bed-bound", "bed bound", "bedridden", "can't walk", "cannot walk",
-                  "immobile", "paraly")
+                  "unable to walk", "can't move", "cannot move", "unable to move", "immobile", "paraly")
 CANT_EVACUATE_POINTS = 10
+
+# Injury text that means "no injury"
+NO_INJURY = {"none", "none reported", "no", "n/a", "na", "no injuries", "no injury", "not reported", "nobody",
+             "nothing", "unknown", "nil"}
+FLOOD_WORDS = re.compile(r"\b(water|flood\w*|drown\w*|bayou|river|rain\w*)\b")
+PEOPLE_VERIFY_OVER = 20
+VERIFY_PEOPLE = "Verify: unusually high people count"
 
 RED, ORANGE = 60, 35
 WAIT_BONUS_EVERY_MIN = 10
@@ -51,14 +58,31 @@ def normalize_water(level: str | None) -> str:
     return "unknown"
 
 
+def case_text(case: dict) -> str:
+    """Everything said or written about the case (caller turns, translation, notes, summary). Lowercase."""
+    parts = [case.get(k) or "" for k in ("notes", "critical_reason", "injuries", "summary_en", "landmark")]
+    parts += [l.get("message", "") for l in case.get("transcript") or [] if l.get("role") == "user"]
+    parts += [l.get("message", "") for l in case.get("transcript_en") or []
+              if (l.get("role") or "").lower() in {"caller", "user"}]
+    return " ".join(parts).lower()
+
+
+def has_injury(injuries: str | None) -> bool:
+    text = re.sub(r"[.!\s]+$", "", (injuries or "").strip().lower())
+    return bool(text) and text not in NO_INJURY and not text.startswith(("no ", "none"))
+
+
+def flood_related(case: dict) -> bool:
+    level = (case.get("water_level") or "").strip()
+    return bool(level) or bool(case.get("water_rising")) or bool(FLOOD_WORDS.search(case_text(case)))
+
+
 def cant_evacuate_alone(case: dict) -> bool:
-    notes = (case.get("notes") or "").lower()
-    text = " ".join([*(case.get("vulnerable") or []), *(case.get("medical_needs") or []),
-                     case.get("injuries") or "", notes]).lower()
+    text = " ".join([*(case.get("vulnerable") or []), *(case.get("medical_needs") or []), case_text(case)]).lower()
     vulnerable = " ".join(case.get("vulnerable") or []).lower()
     limited = any(w in text for w in MOBILITY_WORDS) or any(
         w in vulnerable for w in VULNERABLE_GROUPS["elderly"] + VULNERABLE_GROUPS["disabled"])
-    alone = case.get("people_count") == 1 or bool(re.search(r"\balone\b|by (him|her|them)sel(f|ves)", notes))
+    alone = case.get("people_count") == 1 or bool(re.search(r"\balone\b|by (him|her|them)sel(f|ves)", text))
     return limited and alone
 
 
@@ -71,7 +95,7 @@ def base_score(case: dict) -> tuple[int, list[str]]:
         reasons.append("Life-threatening (+30)")
 
     water = normalize_water(case.get("water_level"))
-    wp = WATER_POINTS[water]
+    wp = WATER_POINTS[water] if flood_related(case) else 0  # no water points for a gunshot, fire, etc.
     if wp:
         label = "unknown water level" if water == "unknown" else f"water at {water}"
         reasons.append(f"{label.capitalize()} (+{wp})")
@@ -86,7 +110,7 @@ def base_score(case: dict) -> tuple[int, list[str]]:
         points += 15
         reasons.append("Depends on medicine or power (+15)")
 
-    if (case.get("injuries") or "").strip():
+    if has_injury(case.get("injuries")):
         points += 10
         reasons.append("Injury reported (+10)")
 
@@ -102,6 +126,8 @@ def base_score(case: dict) -> tuple[int, list[str]]:
         pp = min(10, 2 * people)
         points += pp
         reasons.append(f"{people} {'person' if people == 1 else 'people'} (+{pp})")
+        if people > PEOPLE_VERIFY_OVER:
+            reasons.append(VERIFY_PEOPLE)
 
     evac_floor = 0
     if cant_evacuate_alone(case):

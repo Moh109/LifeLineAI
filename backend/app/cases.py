@@ -10,7 +10,7 @@ from . import db, elevenlabs, gemini, grounding, memory
 from .areas import area_mentioned, nearest_area
 from .geocode import geocode
 from .realtime import hub
-from .scoring import base_score, label_for, normalize_water, wait_bonus
+from .scoring import VERIFY_PEOPLE, base_score, has_injury, label_for, normalize_water, wait_bonus
 
 log = logging.getLogger("lifeline.cases")
 
@@ -126,7 +126,7 @@ def build_summary(c: dict) -> str:
         parts.append(f"With: {', '.join(c['vulnerable'])}.")
     if c.get("medical_needs"):
         parts.append(f"Needs: {', '.join(c['medical_needs'])}.")
-    if c.get("injuries"):
+    if has_injury(c.get("injuries")):
         parts.append(f"Injury: {c['injuries']}.")
     return " ".join(parts)
 
@@ -154,10 +154,14 @@ async def publish(case: dict, event: str = "case_upsert") -> dict:
     return data
 
 
-def _with_score(fields: dict) -> dict:
-    score, reasons = base_score(fields)
+def _with_score(fields: dict, context: dict | None = None) -> dict:
+    """Score `fields`. `context` is the stored case, so the rules can also read its transcript and notes."""
+    score, reasons = base_score({**(context or {}), **fields})
     fields["base_priority"] = score
     fields["reasons"] = reasons
+    if VERIFY_PEOPLE in reasons:  # e.g. a prank claiming 100 people: flag, never clear an existing flag
+        fields["needs_review"] = True
+        fields["review_reason"] = fields.get("review_reason") or "Unusually high people count: verify"
     if not fields.get("enriched"):
         fields["summary_en"] = build_summary(fields)
     return fields
@@ -263,7 +267,7 @@ async def _upsert_rescue(raw: dict, *, phone: str | None, conversation_id: str |
             fields["phone"] = phone
         if enriched_summary:
             fields["summary_en"], fields["enriched"] = enriched_summary, True
-        _with_score(fields)
+        _with_score(fields, context=existing)
         if fields.get("enriched") and existing.get("summary_en") and not enriched_summary:
             fields["summary_en"] = existing["summary_en"]
         case = await db.update_case(existing["id"], fields)
@@ -317,7 +321,7 @@ async def locate(case_id: int) -> None:
     else:
         fields.update(location_confidence="none")
     fields["neighborhood"] = fields.get("neighborhood") or case.get("neighborhood")
-    _with_score(fields)
+    _with_score(fields, context=case)
     if case.get("enriched"):
         fields["summary_en"] = case["summary_en"]
     updated = await db.update_case(case_id, {k: v for k, v in fields.items() if k in
@@ -335,7 +339,7 @@ async def set_location(case_id: int, lat: float, lng: float) -> dict:
     fields: dict[str, Any] = {k: case.get(k) for k in INCOMING_KEYS}
     fields.update(enriched=case.get("enriched"), lat=lat, lng=lng, location_confidence="high",
                   neighborhood=nearest_area(lat, lng))
-    _with_score(fields)
+    _with_score(fields, context=case)
     if case.get("enriched"):
         fields["summary_en"] = case["summary_en"]
     updated = await db.update_case(case_id, {k: fields[k] for k in
@@ -487,7 +491,7 @@ async def update_from_callback(raw: dict) -> dict:
     fields["enriched"] = False
     fields["neighborhood"] = case.get("neighborhood")
     fields["location_confidence"] = "none" if incoming.get("address") else case.get("location_confidence")
-    _with_score(fields)
+    _with_score(fields, context=case)
     updated = await db.update_case(case["id"], fields)
     await publish(updated)
     if incoming.get("life_threatening") and not case.get("life_threatening"):
@@ -601,7 +605,7 @@ async def enrich(case_id: int, lines: list[dict]) -> None:
     fields["neighborhood"] = case.get("neighborhood")
     fields["location_confidence"] = case.get("location_confidence")
     fields["enriched"] = True
-    _with_score(fields)
+    _with_score(fields, context=case)
     fields["summary_en"] = extraction.get("summary_en") or build_summary(fields)
     fields["enriched"] = True
     translated = extraction.get("transcript_en") or []
@@ -629,7 +633,7 @@ async def ground(case_id: int) -> None:
     fields.update({k: v for k, v in changes.items() if k in INCOMING_KEYS})
     fields.update(enriched=case.get("enriched"), neighborhood=case.get("neighborhood"),
                   location_confidence=case.get("location_confidence"))
-    _with_score(fields)
+    _with_score(fields, context=case)
     if case.get("enriched"):
         fields["summary_en"] = case["summary_en"]
     updated = await db.update_case(case_id, {**changes, "base_priority": fields["base_priority"],
