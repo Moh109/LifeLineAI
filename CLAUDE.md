@@ -54,7 +54,9 @@ python scripts\fake_call.py --repeat --phone +18325550199
 
 ## Known gotchas
 - Values in `backend/.env` must NOT be quoted: `fake_call.py` doesn't strip quotes, so the secret won't match (401).
-- `GEMINI_MODEL` default may not be a real model name; if Gemini calls fail, set a current Flash model.
+- Gemini free tier = ~20 requests/day PER MODEL (429 RESOURCE_EXHAUSTED when used up, resets ~24h later).
+  `gemini-3.8-flash` ran out Oct 10. Using `gemini-3.5-flash-lite` (~3s vs ~85s for Flash). Backups with
+  fresh quota: `gemini-3.7-flash`, `gemini-3.5-flash`. Enabling billing in AI Studio removes the limit.
 - Backboard API paths in `memory.py` are unverified; failures are caught and non-fatal.
 - Only `+1555…` numbers count as fake. Other test numbers will get real callback attempts once callbacks are configured.
 - Dashboard/API has no login: don't share the public URL; `/api/demo/reset?all=true` wipes everything.
