@@ -19,6 +19,9 @@ FAKE_PHONE_PREFIX = "+1555"
 
 _background: set[asyncio.Task] = set()
 _seen_conversations: set[str] = set()
+# ElevenLabs fires tools in parallel (flag_critical + submit at the same instant). Without this,
+# both see "no case yet" and a new caller gets two cases. One process, so an in-memory lock is enough.
+_case_lock = asyncio.Lock()
 
 
 def spawn(coro) -> None:
@@ -229,6 +232,13 @@ async def _log_inbound_once(conversation_id: str | None, case: dict | None, phon
 async def upsert_rescue(raw: dict, *, phone: str | None, conversation_id: str | None = None,
                         source: str = "call", enriched_summary: str | None = None) -> dict:
     """Create or update a case. Returns the saved row. Geocoding happens in the background."""
+    async with _case_lock:
+        return await _upsert_rescue(raw, phone=phone, conversation_id=conversation_id, source=source,
+                                    enriched_summary=enriched_summary)
+
+
+async def _upsert_rescue(raw: dict, *, phone: str | None, conversation_id: str | None,
+                         source: str, enriched_summary: str | None) -> dict:
     incoming = normalize_incoming(raw)
     phone = phone or normalize_phone(raw.get("callback_number"))
 
@@ -346,12 +356,14 @@ async def flag_critical(raw: dict, *, phone: str | None, conversation_id: str | 
 
 
 async def lookup(phone: str | None, conversation_id: str | None) -> dict:
-    case = await db.find_open_case_by_phone(phone) if phone else None
-    await _log_inbound_once(conversation_id, case, phone)
-    if case and conversation_id and conversation_id not in (case.get("conversation_ids") or []):
-        conv_ids = list(case.get("conversation_ids") or []) + [conversation_id]
-        case = await db.update_case(case["id"], {"conversation_ids": conv_ids,
-                                                 "call_count": (case.get("call_count") or 1) + 1})
+    async with _case_lock:
+        case = await db.find_open_case_by_phone(phone) if phone else None
+        await _log_inbound_once(conversation_id, case, phone)
+        if case and conversation_id and conversation_id not in (case.get("conversation_ids") or []):
+            conv_ids = list(case.get("conversation_ids") or []) + [conversation_id]
+            case = await db.update_case(case["id"], {"conversation_ids": conv_ids,
+                                                     "call_count": (case.get("call_count") or 1) + 1})
+    if case:
         await publish(case)
     history = await memory.recall(phone) if phone else []
 
