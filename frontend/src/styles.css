@@ -170,12 +170,6 @@ button.link { border: 0; padding: 0; background: none; color: var(--water); text
 .dispatch label.check { flex-direction: row; align-items: center; gap: 8px; margin-top: 10px; font-weight: 500; }
 .actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
 .actions.secondary { margin-top: 10px; }
-.call-caller { margin-top: 12px; padding: 14px; border: 1px solid var(--line-strong); border-radius: var(--radius);
-  background: #f8fafb; display: flex; gap: 14px; align-items: center; justify-content: space-between; flex-wrap: wrap; }
-.call-caller h3 { margin-top: 0 !important; color: var(--ink) !important; font-size: 15px !important; }
-.call-caller .call-link { display: inline-block; margin-top: 8px; font-size: 20px; font-weight: 700; color: var(--ink); }
-.call-caller .small { font-size: 12px; margin-top: 6px; }
-.call-caller img { border: 1px solid var(--line); border-radius: 4px; background: #fff; }
 .locate { margin-top: 4px; }
 .locate button { margin-top: 8px; }
 
