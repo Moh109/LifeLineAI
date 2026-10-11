@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import WaterGauge from './WaterGauge'
-import { SOURCE_TAGS, TRIAGE, UNITS, WATER_WORDS, api, clockTime, effectivePriority, labelFor, waitText } from './lib'
+import { SOURCE_TAGS, TRIAGE, UNITS, WATER_WORDS, api, clockTime, effectivePriority, getDispatchKey, labelFor, waitText } from './lib'
 
 // Callback is ticked by default for Immediate and Urgent cases; for Delayed (yellow) the dispatcher opts in.
 const callBackByDefault = (c) => c.can_call_back && labelFor(effectivePriority(c)) !== 'yellow'
@@ -12,6 +12,11 @@ export default function CaseDetail({ c, now, onClose, onChanged, draft, setDraft
   const [busy, setBusy] = useState(false)
   const [english, setEnglish] = useState(Boolean(c.transcript_en?.length))
   const [memory, setMemory] = useState([])
+  // Where playback is: { cid, time } of the recording playing (or last played), null before anything plays
+  const [position, setPosition] = useState(null)
+  const [missing, setMissing] = useState({}) // conversation ids whose recording failed to load
+  const players = useRef({}) // conversation id -> <audio>
+  const activeLine = useRef(null)
 
   useEffect(() => {
     setUnit(c.unit || UNITS[0])
@@ -54,6 +59,42 @@ export default function CaseDetail({ c, now, onClose, onChanged, draft, setDraft
     }, 'Location saved.')
 
   const transcript = english && c.transcript_en?.length ? c.transcript_en : c.transcript || []
+  const recordings = c.recordings || []
+  const recorded = new Set(recordings.map((r) => r.conversation_id))
+
+  // A line can seek only if its call has a recording that loaded and the line has a time
+  const seekable = (line) => line.t != null && recorded.has(line.conversation_id) && !missing[line.conversation_id]
+
+  // The line being spoken: the last line of the playing call that started at or before the current time
+  let active = -1
+  if (position) {
+    transcript.forEach((line, i) => {
+      if (line.conversation_id === position.cid && line.t != null && line.t <= position.time) active = i
+    })
+  }
+
+  useEffect(() => {
+    const player = position && players.current[position.cid]
+    if (player && !player.paused) activeLine.current?.scrollIntoView({ block: 'nearest' })
+  }, [active])
+
+  function seekTo(line) {
+    const player = players.current[line.conversation_id]
+    if (!player) return
+    player.currentTime = line.t
+    player.play().catch(() => {})
+    setPosition({ cid: line.conversation_id, time: line.t })
+  }
+
+  function onPlay(cid) {
+    // One call at a time
+    Object.entries(players.current).forEach(([other, el]) => { if (other !== cid && el) el.pause() })
+  }
+
+  function audioSrc(cid) {
+    const key = getDispatchKey()
+    return `/api/cases/${c.id}/recordings/${encodeURIComponent(cid)}/audio${key ? `?key=${encodeURIComponent(key)}` : ''}`
+  }
 
   return (
     <section className="detail" aria-label={`Case ${c.case_number}`}>
@@ -193,22 +234,66 @@ export default function CaseDetail({ c, now, onClose, onChanged, draft, setDraft
                 </button>
               )}
             </div>
+            {recordings.length > 0 && (
+              <div className="recordings">
+                {recordings.map((rec) => (
+                  <div key={rec.conversation_id} className="recording">
+                    <span className="recording-label" id={`rec-${rec.conversation_id}`}>{rec.label}</span>
+                    {missing[rec.conversation_id] ? (
+                      <span className="muted">Recording not available</span>
+                    ) : (
+                      <audio
+                        controls
+                        preload="none"
+                        aria-labelledby={`rec-${rec.conversation_id}`}
+                        src={audioSrc(rec.conversation_id)}
+                        ref={(el) => { players.current[rec.conversation_id] = el }}
+                        onPlay={() => onPlay(rec.conversation_id)}
+                        onTimeUpdate={(e) => setPosition({ cid: rec.conversation_id, time: e.currentTarget.currentTime })}
+                        onEnded={() => setPosition(null)}
+                        onError={() => setMissing((m) => ({ ...m, [rec.conversation_id]: true }))}
+                      />
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
             <ol className="transcript">
-              {transcript.map((line, i) => (
-                <li key={i} className={line.role === 'user' || line.role === 'caller' ? 'from-caller' : 'from-agent'}>
-                  <span className="who">
-                    {line.role === 'user' || line.role === 'caller' ? 'Caller' : 'Lifeline'}
-                    {line.call === 'callback' ? ' (callback)' : ''}
-                  </span>
-                  {line.message}
-                </li>
-              ))}
+              {transcript.map((line, i) => {
+                const who = line.role === 'user' || line.role === 'caller' ? 'Caller' : 'Lifeline'
+                const content = (
+                  <>
+                    <span className="who">
+                      {who}
+                      {line.call === 'callback' ? ' (callback)' : ''}
+                      {seekable(line) && <span className="stamp">{clipTime(line.t)}</span>}
+                    </span>
+                    {line.message}
+                  </>
+                )
+                return (
+                  <li key={i} ref={i === active ? activeLine : undefined}
+                    className={`${who === 'Caller' ? 'from-caller' : 'from-agent'}${i === active ? ' is-playing' : ''}`}
+                    aria-current={i === active ? 'true' : undefined}>
+                    {seekable(line)
+                      ? <button type="button" className="line-seek" onClick={() => seekTo(line)}
+                          aria-label={`Play from ${clipTime(line.t)}: ${who}, ${line.message}`}>{content}</button>
+                      : content}
+                  </li>
+                )
+              })}
             </ol>
           </>
         )}
       </div>
     </section>
   )
+}
+
+// 75 -> '1:15'
+function clipTime(secs) {
+  const s = Math.max(0, Math.floor(secs))
+  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`
 }
 
 function Fact({ k, v }) {

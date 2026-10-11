@@ -8,7 +8,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import Depends, FastAPI, Header, HTTPException, Request, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
@@ -61,6 +61,12 @@ def _dispatch_key_ok(key: str | None) -> bool:
 def require_dispatch_key(x_dispatch_key: str | None = Header(default=None)) -> None:
     """Dashboard routes: the browser sends the key the dispatcher typed in (X-Dispatch-Key)."""
     if not _dispatch_key_ok(x_dispatch_key):
+        raise HTTPException(status_code=401, detail="dispatch key required")
+
+
+def require_dispatch_key_or_query(x_dispatch_key: str | None = Header(default=None), key: str | None = None) -> None:
+    """Like require_dispatch_key, but also takes ?key= (an <audio src> can't send headers; /ws does the same)."""
+    if not (_dispatch_key_ok(x_dispatch_key) if x_dispatch_key else _dispatch_key_ok(key)):
         raise HTTPException(status_code=401, detail="dispatch key required")
 
 
@@ -188,6 +194,42 @@ async def get_case(case_id: int):
     data = cases.serialize(case)
     data["memory"] = await memory.recall(case.get("phone")) if not cases.is_fake_phone(case.get("phone")) else []
     return data
+
+
+@app.get("/api/cases/{case_id}/recordings/{conversation_id}/audio",
+         dependencies=[Depends(require_dispatch_key_or_query)])
+async def recording_audio(case_id: int, conversation_id: str,
+                          range_header: str | None = Header(default=None, alias="range")):
+    """Proxy one call recording from ElevenLabs, so the API key stays on the server."""
+    case = await db.get_case(case_id)
+    if not case or conversation_id not in (case.get("conversation_ids") or []):
+        raise HTTPException(404, "recording not found")
+    audio = await elevenlabs.get_conversation_audio(conversation_id)
+    if not audio:
+        raise HTTPException(404, "no recording for this call (is audio saving on in ElevenLabs?)")
+    body, content_type = audio
+    headers = {"Accept-Ranges": "bytes", "Cache-Control": "private, max-age=3600"}
+    span = _byte_range(range_header, len(body))
+    if span is None:
+        return Response(body, media_type=content_type, headers=headers)
+    start, end = span
+    if start >= len(body) or end < start:
+        return Response(status_code=416, headers={"Content-Range": f"bytes */{len(body)}"})
+    headers["Content-Range"] = f"bytes {start}-{end}/{len(body)}"
+    return Response(body[start:end + 1], status_code=206, media_type=content_type, headers=headers)
+
+
+def _byte_range(header: str | None, size: int) -> tuple[int, int] | None:
+    """'bytes=100-' / 'bytes=100-199' / 'bytes=-500' -> (start, end) inclusive. Browsers need this to seek."""
+    if not header or not header.startswith("bytes=") or "," in header:
+        return None
+    first, _, last = header[6:].strip().partition("-")
+    try:
+        if not first:
+            return max(0, size - int(last)), size - 1
+        return int(first), min(int(last), size - 1) if last else size - 1
+    except ValueError:
+        return None
 
 
 @app.get("/api/stats", dependencies=[Depends(require_dispatch_key)])

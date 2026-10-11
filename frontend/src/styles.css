@@ -194,6 +194,17 @@ button.link { border: 0; padding: 0; background: none; color: var(--water); text
 .transcript .who { display: block; font-size: 12px; font-weight: 700; color: var(--muted); }
 .from-caller { background: var(--water-tint); align-self: flex-start; }
 .from-agent { background: var(--paper); align-self: flex-end; }
+.recordings { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
+.recording { display: grid; grid-template-columns: 96px 1fr; align-items: center; gap: 10px; font-size: 13.5px; }
+.recording-label { font-weight: 700; color: var(--muted); }
+.recording audio { width: 100%; height: 36px; }
+.transcript li.is-playing { box-shadow: inset 4px 0 0 var(--water); outline: 1px solid var(--water); }
+.transcript .stamp { font-weight: 400; margin-left: 6px; font-variant-numeric: tabular-nums; }
+.line-seek {
+  display: block; width: 100%; text-align: left; font: inherit; color: inherit;
+  background: none; border: 0; border-radius: 0; padding: 0; font-weight: 400; cursor: pointer;
+}
+.line-seek:hover .who { color: var(--water); }
 
 /* ---------- map overlays ---------- */
 
