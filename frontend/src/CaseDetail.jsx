@@ -2,10 +2,13 @@ import { useEffect, useState } from 'react'
 import WaterGauge from './WaterGauge'
 import { SOURCE_TAGS, TRIAGE, UNITS, WATER_WORDS, api, clockTime, effectivePriority, labelFor, waitText } from './lib'
 
+// Callback is ticked by default for Immediate and Urgent cases; for Delayed (yellow) the dispatcher opts in.
+const callBackByDefault = (c) => c.can_call_back && labelFor(effectivePriority(c)) !== 'yellow'
+
 export default function CaseDetail({ c, now, onClose, onChanged, draft, setDraft, notify }) {
   const [unit, setUnit] = useState(c.unit || UNITS[0])
   const [eta, setEta] = useState(c.eta_minutes ?? 20)
-  const [callBack, setCallBack] = useState(c.can_call_back)
+  const [callBack, setCallBack] = useState(callBackByDefault(c))
   const [busy, setBusy] = useState(false)
   const [english, setEnglish] = useState(Boolean(c.transcript_en?.length))
   const [memory, setMemory] = useState([])
@@ -13,7 +16,7 @@ export default function CaseDetail({ c, now, onClose, onChanged, draft, setDraft
   useEffect(() => {
     setUnit(c.unit || UNITS[0])
     setEta(c.eta_minutes ?? 20)
-    setCallBack(c.can_call_back)
+    setCallBack(callBackByDefault(c))
     setEnglish(Boolean(c.transcript_en?.length))
     api(`/api/cases/${c.id}`).then((d) => setMemory(d.memory || [])).catch(() => setMemory([]))
   }, [c.id])
@@ -103,7 +106,7 @@ export default function CaseDetail({ c, now, onClose, onChanged, draft, setDraft
               <input type="checkbox" checked={callBack && c.can_call_back} disabled={!c.can_call_back}
                 onChange={(e) => setCallBack(e.target.checked)} />
               {c.can_call_back
-                ? `Call ${c.phone} back with the arrival time`
+                ? `Call ${c.phone} back with the arrival time${labelFor(priority) === 'yellow' ? ' (optional for Delayed cases)' : ''}`
                 : c.source === 'simulated' ? 'Simulated caller: no callback' : 'Callback unavailable (no phone number or callback not set up)'}
             </label>
             <div className="actions">
