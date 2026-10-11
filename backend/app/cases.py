@@ -695,9 +695,12 @@ def strip_water_talk(summary: str | None, case: dict) -> str | None:
     if not summary:
         return summary
     caller_said = " ".join(l.get("message", "") for l in case.get("transcript") or [] if l.get("role") == "user")
-    if normalize_water(case.get("water_level")) not in {"unknown", "none"} or case.get("water_rising") \
-            or FLOOD_WORDS.search(caller_said.lower()):
-        return summary
+    level = normalize_water(case.get("water_level"))
+    if level not in {"unknown", "none"} or case.get("water_rising"):
+        return summary  # a real flood case: keep it
+    if level == "unknown" and FLOOD_WORDS.search(caller_said.lower()):
+        return summary  # depth not given but the caller talked about water
+    # level "none" (caller said "no water") or water never came up: drop the water sentences
     kept = [s for s in re.split(r"(?<=[.!?])\s+", summary.strip()) if not FLOOD_WORDS.search(s.lower())]
     return " ".join(kept) or summary
 

@@ -115,3 +115,10 @@ def test_summary_water_sentences_dropped_for_non_water_calls():
     assert strip_water_talk(s, case) == "Ryan is alone at 4173 Elgin Street with a sprained ankle."
     flood = {"water_level": "knee", "transcript": [{"role": "user", "message": "water is at my knees"}]}
     assert strip_water_talk("Water at knee level. Two people.", flood) == "Water at knee level. Two people."
+
+
+def test_caller_saying_no_water_still_drops_water_sentences():
+    from app.cases import strip_water_talk
+    case = {"water_level": "none", "transcript": [{"role": "user", "message": "Uh, there's no water."}]}
+    assert strip_water_talk("Ryan sprained his ankle. He is alone and there is no water involved.", case) \
+        == "Ryan sprained his ankle."
