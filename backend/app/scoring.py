@@ -4,6 +4,7 @@ Gemini and the voice agent only extract facts. The score is plain rules, so it
 is the same every time and every point can be explained to a dispatcher.
 """
 
+import re
 from datetime import datetime, timezone
 
 WATER_POINTS = {
@@ -28,6 +29,11 @@ VULNERABLE_GROUPS = {
     "pregnant": ("pregnan",),
 }
 
+# Someone who can't get out on their own: these words anywhere in the case, or elderly/disabled, AND alone
+MOBILITY_WORDS = ("wheelchair", "bedbound", "bed-bound", "bed bound", "bedridden", "can't walk", "cannot walk",
+                  "immobile", "paraly")
+CANT_EVACUATE_POINTS = 10
+
 RED, ORANGE = 60, 35
 WAIT_BONUS_EVERY_MIN = 10
 WAIT_BONUS_MAX = 20
@@ -43,6 +49,17 @@ def normalize_water(level: str | None) -> str:
     if text in {"none", "no", "dry", "no water"}:
         return "none"
     return "unknown"
+
+
+def cant_evacuate_alone(case: dict) -> bool:
+    notes = (case.get("notes") or "").lower()
+    text = " ".join([*(case.get("vulnerable") or []), *(case.get("medical_needs") or []),
+                     case.get("injuries") or "", notes]).lower()
+    vulnerable = " ".join(case.get("vulnerable") or []).lower()
+    limited = any(w in text for w in MOBILITY_WORDS) or any(
+        w in vulnerable for w in VULNERABLE_GROUPS["elderly"] + VULNERABLE_GROUPS["disabled"])
+    alone = case.get("people_count") == 1 or bool(re.search(r"\balone\b|by (him|her|them)sel(f|ves)", notes))
+    return limited and alone
 
 
 def base_score(case: dict) -> tuple[int, list[str]]:
@@ -86,6 +103,13 @@ def base_score(case: dict) -> tuple[int, list[str]]:
         points += pp
         reasons.append(f"{people} {'person' if people == 1 else 'people'} (+{pp})")
 
+    evac_floor = 0
+    if cant_evacuate_alone(case):
+        evac_floor = RED if case.get("water_rising") else ORANGE
+        points += CANT_EVACUATE_POINTS
+        reasons.append(f"Can't evacuate alone (+{CANT_EVACUATE_POINTS}, at least "
+                       f"{'Immediate because water is rising' if evac_floor == RED else 'Urgent'})")
+
     battery = case.get("battery_pct")
     if battery is not None and battery <= 15:
         points += 5
@@ -99,6 +123,9 @@ def base_score(case: dict) -> tuple[int, list[str]]:
     points = min(100, points)
     if case.get("life_threatening"):
         points = max(points, 70)
+    if points < evac_floor:
+        reasons.append(f"Raised from {points} to {evac_floor}: can't evacuate alone")
+        points = evac_floor
     return points, reasons
 
 

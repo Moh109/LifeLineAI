@@ -195,6 +195,7 @@ Gemini and the voice agent only pull out facts. The score is plain rules in `bac
 | Injury | +10 |
 | Each vulnerable group (elderly, baby or child, disabled, pregnant) | +8, max 16 |
 | People on site | +2 each, max 10 |
+| Can't evacuate alone: wheelchair, bedbound, can't walk, elderly or disabled, AND alone (1 person on site, or "alone" in the notes). Also forces at least 35 (Urgent), or at least 60 (Immediate) if the water is rising | +10 |
 | Phone battery 15% or less | +5 |
 | Waiting time, while unassigned | +1 per 10 min, max 20 |
 
