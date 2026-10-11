@@ -40,7 +40,9 @@ async def lifespan(app: FastAPI):
     await db.close()
 
 
-app = FastAPI(title="Lifeline", lifespan=lifespan)
+_docs = config.API_DOCS
+app = FastAPI(title="Lifeline", lifespan=lifespan, docs_url="/docs" if _docs else None,
+              redoc_url="/redoc" if _docs else None, openapi_url="/openapi.json" if _docs else None)
 app.add_middleware(CORSMiddleware, allow_origins=config.CORS_ORIGINS, allow_methods=["*"], allow_headers=["*"])
 
 
@@ -288,6 +290,8 @@ if config.FRONTEND_DIST.exists():
 
     @app.get("/{path:path}", include_in_schema=False)
     async def spa(path: str):
+        if path in {"docs", "redoc", "openapi.json"}:  # API docs are off: a clear 404, not the dashboard
+            raise HTTPException(404, "Not found")
         dist = config.FRONTEND_DIST.resolve()
         file = (dist / path).resolve()
         if path and file.is_file() and dist in file.parents:

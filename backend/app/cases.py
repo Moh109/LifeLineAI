@@ -131,7 +131,15 @@ def build_summary(c: dict) -> str:
     return " ".join(parts)
 
 
+def mask_phone(phone: str | None) -> str | None:
+    """'+12814085709' -> '•••-•••-5709'. The full number never leaves the server."""
+    digits = re.sub(r"\D", "", phone or "")
+    return f"•••-•••-{digits[-4:]}" if digits else None
+
+
 def serialize(c: dict) -> dict:
+    """Case as sent to the dashboard (REST and /ws). Phones are masked; callbacks look the
+    full number up server-side by case ID."""
     bonus = wait_bonus(c.get("created_at"), c.get("status"))
     priority = min(100, (c.get("base_priority") or 0) + bonus)
     out = {k: v for k, v in c.items() if k not in {"conversation_ids"}}
@@ -144,6 +152,7 @@ def serialize(c: dict) -> dict:
         wait_bonus=bonus,
         label=label_for(priority),
         can_call_back=not is_fake_phone(c.get("phone")) and elevenlabs.callback_ready(),
+        phone=mask_phone(c.get("phone")),
     )
     return out
 

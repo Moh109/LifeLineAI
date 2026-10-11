@@ -43,6 +43,8 @@ GOOGLE_MAPS_API_KEY = _get("GOOGLE_MAPS_API_KEY")
 GEOCODER_CONTACT_EMAIL = _get("GEOCODER_CONTACT_EMAIL", "+https://github.com/Moh109/LifeLineAI")
 
 PORT = int(_get("PORT", "8000"))
+# /docs, /redoc and /openapi.json: off unless API_DOCS=true (only turn on for local development)
+API_DOCS = _bool("API_DOCS")
 CORS_ORIGINS = [o.strip() for o in _get("CORS_ORIGINS", "http://localhost:5173").split(",") if o.strip()]
 
 FRONTEND_DIST = BACKEND_DIR.parent / "frontend" / "dist"
