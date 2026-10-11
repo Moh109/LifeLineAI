@@ -161,7 +161,7 @@ Skipped for now. The code is in place: without `CALLBACK_AGENT_ID` the dashboard
 
 - [ ] Phone number printed big on a card for judges to call
 - [ ] Twilio account upgraded (not trial) and a teammate's phone ready as a backup caller
-- [ ] Load the clean demo set 30 min before judging: `backend.venvScriptspython.exe scriptsseed_demo.py` (asks before clearing). Dashboard key: `DISPATCH_KEY` in `backend/.env`
+- [ ] Load the clean demo set 30 min before judging: `backend/.venv/Scripts/python.exe scripts/seed_demo.py` (asks before clearing). Dashboard key: `DISPATCH_KEY` in `backend/.env`
 - [ ] Dashboard open full screen. Close the queue detail before judges arrive
 - [ ] One rehearsed flow: judge calls → alert + pin drop while they talk → open case → **Assign team** → transcript and English summary appear → **Run Harvey surge**
 - [ ] Backup video recorded by 11 am
