@@ -53,10 +53,13 @@ python scripts\fake_call.py --repeat --phone +15550000199
 ```
 
 ## Production (deployed Oct 11)
-- **https://108.61.222.88.sslip.io** (Vultr, Ubuntu 24.04, Dallas). App in `/opt/lifeline`, systemd service `lifeline`,
+- **https://lifeline-ai.us** (domain from Porkbun, A records for @ and www -> 108.61.222.88). The same server also
+  answers on https://108.61.222.88.sslip.io, which the ElevenLabs tools and webhook still use (Vultr, Ubuntu 24.04, Dallas). App in `/opt/lifeline`, systemd service `lifeline`,
   Caddy for HTTPS (Let's Encrypt). Same Tiger Data DB as local, so local and prod see the same cases.
 - SSH: `ssh -i ~/.ssh/lifeline_vultr root@108.61.222.88` (key made for this project, no passphrase).
-- Ship code: push to GitHub, then on the server `cd /opt/lifeline && git pull && sudo bash deploy/setup_vultr.sh 108.61.222.88.sslip.io`.
+- Ship code: push to GitHub, then on the server `cd /opt/lifeline && git pull && sudo bash deploy/setup_vultr.sh "lifeline-ai.us, www.lifeline-ai.us, 108.61.222.88.sslip.io"`.
+  ALWAYS pass all three names in quotes: the script rewrites the Caddy config, and leaving one out takes that
+  address offline (drop sslip.io and every ElevenLabs tool call and webhook fails).
 - Change secrets: edit local `backend/.env`, then
   `scp -i ~/.ssh/lifeline_vultr backend/.env root@108.61.222.88:/opt/lifeline/backend/.env` and `systemctl restart lifeline`
   (and `chmod 600` the file). Never paste .env into chat.

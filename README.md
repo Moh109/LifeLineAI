@@ -4,6 +4,8 @@ When disaster floods the 911 lines, Lifeline answers instead of hold music. A vo
 
 Built for CodeRED Orion, October 2026.
 
+**Live dashboard:** https://lifeline-ai.us (dispatchers enter the team's dispatch key once).
+
 ```
 Caller's phone ─▶ Twilio number ─▶ ElevenLabs intake agent ──tools──▶ Backend (FastAPI)
                                                                        │  scores, saves, pushes
@@ -212,7 +214,7 @@ Gemini and the voice agent only pull out facts. The score is plain rules in `bac
 | Gemini | Post-call translation and summary, filling gaps the agent missed, rebuilding dropped calls, turning social posts into cases |
 | Backboard | Not enabled in our deployment. The code is ready: set `BACKBOARD_API_KEY` to remember callers across calls |
 | Tiger Data | `call_events` hypertable, a real-time continuous aggregate `calls_per_minute`, live surge chart from `time_bucket` |
-| Vultr | Production host (Ubuntu, systemd, Caddy with automatic HTTPS) at https://108.61.222.88.sslip.io |
+| Vultr + Porkbun | Production host (Ubuntu, systemd, Caddy with automatic HTTPS) at https://lifeline-ai.us |
 
 ## API
 

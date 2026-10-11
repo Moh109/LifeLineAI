@@ -4,6 +4,9 @@
 #   1. Point your domain's A record at this server's IP first (HTTPS needs it).
 #   2. Copy the project here (git clone your repo into /opt/lifeline) and fill in backend/.env
 #   3. sudo bash /opt/lifeline/deploy/setup_vultr.sh yourdomain.tech
+#      Several names: pass them in quotes, comma-separated, e.g.
+#      sudo bash setup_vultr.sh "lifeline-ai.us, www.lifeline-ai.us, 108.61.222.88.sslip.io"
+#      (every run rewrites the Caddy config, so always pass ALL the names you use)
 #
 # Re-run it any time to pull in code changes: it rebuilds and restarts.
 set -euo pipefail
@@ -55,6 +58,6 @@ fi
 
 sleep 3
 echo
-echo "Done. Check: https://$DOMAIN/api/health"
+echo "Done. Check: https://${DOMAIN%%,*}/api/health"
 echo "Logs:  journalctl -u lifeline -f"
 echo "Now update the ElevenLabs tool URLs and post-call webhook to https://$DOMAIN"
