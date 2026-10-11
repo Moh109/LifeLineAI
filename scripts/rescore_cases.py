@@ -1,9 +1,9 @@
-"""Re-score every case with the current rules in backend/app/scoring.py.
+r"""Re-score every case with the current rules in backend/app/scoring.py.
 
-    python scripts/rescore_cases.py            # preview: show what would change
-    python scripts/rescore_cases.py --apply    # write the new scores
+    .\backend\.venv\Scripts\python.exe scripts\rescore_cases.py            # preview: show what would change
+    .\backend\.venv\Scripts\python.exe scripts\rescore_cases.py --apply    # write the new scores
 
-Run with the backend venv (backend\\.venv\\Scripts\\python.exe). Only scores, reasons and review
+Run in PowerShell from the project folder. Only scores, reasons and review
 flags change; nothing is deleted and existing review flags are never cleared.
 Open dashboards pick up the new scores on refresh.
 """

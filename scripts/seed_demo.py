@@ -1,9 +1,9 @@
-"""Load a clean demo state for judging: 8 open cases across Houston flood neighborhoods.
+r"""Load a clean demo state for judging: 8 open cases across Houston flood neighborhoods.
 
-    python scripts/seed_demo.py --dry-run    # show the cases and their scores, touch nothing
-    python scripts/seed_demo.py              # asks before deleting ALL cases, then loads the demo set
+    .\backend\.venv\Scripts\python.exe scripts\seed_demo.py --dry-run    # show the cases and their scores, touch nothing
+    .\backend\.venv\Scripts\python.exe scripts\seed_demo.py              # asks before deleting ALL cases, then loads the demo set
 
-Run with the backend venv (backend\\.venv\\Scripts\\python.exe) about 30 minutes before judging.
+Run in PowerShell from the project folder, about 30 minutes before judging.
 It talks to the database in backend/.env, which is the same one the live server uses.
 Every phone is a fake +1555 number, so nobody can be called. Refresh open dashboards afterwards.
 
