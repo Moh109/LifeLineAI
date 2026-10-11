@@ -4,6 +4,7 @@ import hashlib
 import hmac
 import logging
 import time
+from collections import OrderedDict
 
 import httpx
 
@@ -12,6 +13,11 @@ from . import config
 log = logging.getLogger("lifeline.elevenlabs")
 
 OUTBOUND_URL = "https://api.elevenlabs.io/v1/convai/twilio/outbound-call"
+AUDIO_URL = "https://api.elevenlabs.io/v1/convai/conversations/{conversation_id}/audio"
+
+# Recent recordings kept in memory: the browser re-requests byte ranges every time the dispatcher seeks
+_audio_cache: OrderedDict[str, tuple[bytes, str]] = OrderedDict()
+_AUDIO_CACHE_SIZE = 16
 
 # ElevenLabs agent language codes for the languages the dashboard knows about
 LANGUAGE_CODES = {
@@ -66,6 +72,31 @@ async def start_outbound_call(to_number: str, dynamic_variables: dict, first_mes
     except Exception as exc:
         log.error("Outbound call error: %s", exc)
         return {"ok": False, "error": str(exc)[:300]}
+
+
+async def get_conversation_audio(conversation_id: str) -> tuple[bytes, str] | None:
+    """Recording of one conversation as (audio bytes, content type), or None if there isn't one.
+    Needs audio saving turned on for the agent in ElevenLabs."""
+    if not config.ELEVENLABS_API_KEY or not conversation_id:
+        return None
+    if conversation_id in _audio_cache:
+        _audio_cache.move_to_end(conversation_id)
+        return _audio_cache[conversation_id]
+    try:
+        async with httpx.AsyncClient(timeout=30) as client:
+            r = await client.get(AUDIO_URL.format(conversation_id=conversation_id),
+                                 headers={"xi-api-key": config.ELEVENLABS_API_KEY})
+        if r.status_code >= 400 or not r.content:
+            log.warning("No audio for conversation %s (%s): %s", conversation_id, r.status_code, r.text[:200])
+            return None
+    except Exception as exc:
+        log.error("Audio download error for %s: %s", conversation_id, exc)
+        return None
+    audio = (r.content, r.headers.get("content-type", "").split(";")[0] or "audio/mpeg")
+    _audio_cache[conversation_id] = audio
+    if len(_audio_cache) > _AUDIO_CACHE_SIZE:
+        _audio_cache.popitem(last=False)
+    return audio
 
 
 def verify_webhook(body: bytes, signature_header: str | None, tolerance_s: int = 1800) -> bool:

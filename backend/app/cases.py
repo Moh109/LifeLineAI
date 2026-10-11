@@ -162,7 +162,31 @@ def serialize(c: dict) -> dict:
         can_call_back=not is_fake_phone(c.get("phone")) and elevenlabs.callback_ready(),
         phone=mask_phone(c.get("phone")),
         callback_status=mask_phones_in_text(c.get("callback_status")),
+        recordings=recordings(c),
     )
+    return out
+
+
+def recordings(c: dict) -> list[dict]:
+    """One entry per call with a transcript, in call order. Lines are matched to a recording by the
+    conversation_id the webhook stamps on them; lines saved before that have no recording."""
+    known = set(c.get("conversation_ids") or [])
+    seen: dict[str, str] = {}
+    for line in c.get("transcript") or []:
+        cid = line.get("conversation_id")
+        if cid and cid in known and cid not in seen:
+            seen[cid] = line.get("call") or "intake"
+    out, counts = [], {"intake": 0, "callback": 0}
+    totals = {kind: list(seen.values()).count(kind) for kind in counts}
+    for cid, call in seen.items():
+        kind = "callback" if call == "callback" else "intake"
+        counts[kind] += 1
+        n = counts[kind]
+        if kind == "callback":
+            label = "Callback" if totals[kind] == 1 else f"Callback {n}"
+        else:
+            label = "Intake call" if n == 1 else f"Call {n}"
+        out.append({"conversation_id": cid, "call": kind, "label": label})
     return out
 
 
@@ -585,8 +609,24 @@ def _transcript_lines(data: dict, call: str) -> list[dict]:
         message = (turn.get("message") or "").strip()
         if message:
             lines.append({"role": turn.get("role"), "message": message, "call": call,
-                          "t": turn.get("time_in_call_secs")})
+                          "t": turn.get("time_in_call_secs"), "conversation_id": data.get("conversation_id")})
     return lines
+
+
+def _align_translation(translated: list[dict], lines: list[dict]) -> list[dict]:
+    """Give Gemini's English lines the timing and call of the originals so the recording can follow
+    them. Only when the counts match; otherwise the translation can't be lined up safely."""
+    if len(translated) != len(lines):
+        return translated
+    return [{**t, "call": l["call"], "t": l["t"], "conversation_id": l["conversation_id"]}
+            for t, l in zip(translated, lines)]
+
+
+def _with_conversation(case: dict, conversation_id: str | None) -> list[str]:
+    conv_ids = list(case.get("conversation_ids") or [])
+    if conversation_id and conversation_id not in conv_ids:
+        conv_ids.append(conversation_id)
+    return conv_ids
 
 
 async def handle_post_call(event: dict) -> None:
@@ -608,7 +648,8 @@ async def handle_post_call(event: dict) -> None:
             await db.find_case_by_conversation(conversation_id)
         if case:
             transcript = list(case.get("transcript") or []) + _transcript_lines(data, "callback")
-            updated = await db.update_case(case["id"], {"transcript": transcript, "callback_status": "completed"})
+            updated = await db.update_case(case["id"], {"transcript": transcript, "callback_status": "completed",
+                                                        "conversation_ids": _with_conversation(case, conversation_id)})
             await publish(updated)
         return
 
@@ -619,7 +660,8 @@ async def handle_post_call(event: dict) -> None:
 
     if case:
         transcript = list(case.get("transcript") or []) + lines
-        case = await db.update_case(case["id"], {"transcript": transcript})
+        case = await db.update_case(case["id"], {"transcript": transcript,
+                                                 "conversation_ids": _with_conversation(case, conversation_id)})
         await publish(case)
         await enrich(case["id"], lines)
         return
@@ -636,7 +678,7 @@ async def handle_post_call(event: dict) -> None:
     case = await upsert_rescue(extraction, phone=phone, conversation_id=conversation_id, source="dropped_call",
                                enriched_summary=extraction.get("summary_en"))
     await db.update_case(case["id"], {"transcript": lines,
-                                      "transcript_en": [l for l in extraction.get("transcript_en") or []] or None})
+                                      "transcript_en": _align_translation(extraction.get("transcript_en") or [], lines) or None})
     if duration:
         await db.add_call_event("inbound", case_id=case["id"], phone=phone, duration_s=int(duration))
     await ground(case["id"])
@@ -683,7 +725,7 @@ async def enrich(case_id: int, lines: list[dict]) -> None:
     _with_score(fields, context=case)
     fields["summary_en"] = extraction.get("summary_en") or build_summary(fields)
     fields["enriched"] = True
-    translated = extraction.get("transcript_en") or []
+    translated = _align_translation(extraction.get("transcript_en") or [], lines)
     if translated:
         fields["transcript_en"] = translated
     updated = await db.update_case(case_id, fields)
