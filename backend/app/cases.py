@@ -137,6 +137,14 @@ def mask_phone(phone: str | None) -> str | None:
     return f"•••-•••-{digits[-4:]}" if digits else None
 
 
+_PHONE_IN_TEXT = re.compile(r"\+?1?[\s.-]?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}\b")
+
+
+def mask_phones_in_text(text: str | None) -> str | None:
+    """Mask any phone number inside free text, e.g. a Twilio error that names the number it couldn't call."""
+    return _PHONE_IN_TEXT.sub(lambda m: mask_phone(m.group()), text) if text else text
+
+
 def serialize(c: dict) -> dict:
     """Case as sent to the dashboard (REST and /ws). Phones are masked; callbacks look the
     full number up server-side by case ID."""
@@ -153,6 +161,7 @@ def serialize(c: dict) -> dict:
         label=label_for(priority),
         can_call_back=not is_fake_phone(c.get("phone")) and elevenlabs.callback_ready(),
         phone=mask_phone(c.get("phone")),
+        callback_status=mask_phones_in_text(c.get("callback_status")),
     )
     return out
 
@@ -508,7 +517,7 @@ async def _place_callback(case: dict) -> None:
                      f"request, case {variables['case_number_spoken']}. A rescue team has been assigned to you.")
     first_message = await gemini.translate(english_first, variables["language"]) or english_first
     result = await elevenlabs.start_outbound_call(case["phone"], variables, first_message, variables["language"])
-    status = "ringing" if result["ok"] else f"failed: {result.get('error', 'unknown error')}"
+    status = "ringing" if result["ok"] else f"failed: {mask_phones_in_text(result.get('error', 'unknown error'))}"
     conv_ids = list(case.get("conversation_ids") or [])
     if result.get("conversation_id"):
         conv_ids.append(result["conversation_id"])
