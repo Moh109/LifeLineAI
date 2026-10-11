@@ -65,6 +65,9 @@ python scripts\fake_call.py --repeat --phone +18325550199
   (PATCH ignores it), so the prod webhook is a new one, "intake-server" (id 99afcd38...). The old tunnel webhook
   "intake" (70510ef4...) is no longer attached to the agent.
 
+- Callbacks ON (Oct 11): agent "Lifeline Callback" + tool update_from_callback created via API, pointing at prod.
+  CALLBACK_AGENT_ID and CALLBACK_ALLOW_OVERRIDES=true in .env. Callback checkbox defaults off for Delayed cases.
+
 ## Known gotchas
 - Values in `backend/.env` must NOT be quoted: `fake_call.py` doesn't strip quotes, so the secret won't match (401).
 - Gemini free tier = ~20 requests/day PER MODEL (429 RESOURCE_EXHAUSTED when used up, resets ~24h later).
