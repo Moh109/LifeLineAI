@@ -242,6 +242,8 @@ async def intake_text(body: IntakeTextBody):
                                      enriched_summary=extraction.get("summary_en"))
     case = await db.update_case(case["id"], {"transcript": [{"role": "user", "message": body.text.strip(),
                                                              "call": "social"}]})
+    await cases.ground(case["id"])  # the post text is the "caller" here
+    case = await db.get_case(case["id"])
     await cases.publish(case)
     return cases.serialize(case)
 

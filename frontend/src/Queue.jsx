@@ -82,6 +82,7 @@ const CaseCard = memo(function CaseCard({ c, now, onSelect }) {
               ? <p className="summary">{c.summary_en}</p>
               : <p className="summary">{WATER_WORDS[c.water_level || 'unknown']}{c.water_rising ? ', rising' : ''}</p>}
             <ul className="chips">
+              {c.needs_review && <li className="chip-review" title={c.review_reason || ''}>Needs review</li>}
               {c.people_count ? <li>{c.people_count} {c.people_count === 1 ? 'person' : 'people'}</li> : null}
               {(c.vulnerable || []).map((v) => <li key={v}>{v}</li>)}
               {(c.medical_needs || []).map((m) => <li key={m} className="chip-med">{m}</li>)}

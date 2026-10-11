@@ -6,7 +6,7 @@ import re
 from datetime import datetime, timezone
 from typing import Any
 
-from . import db, elevenlabs, gemini, memory
+from . import db, elevenlabs, gemini, grounding, memory
 from .areas import area_mentioned, nearest_area
 from .geocode import geocode
 from .realtime import hub
@@ -560,6 +560,7 @@ async def handle_post_call(event: dict) -> None:
                                       "transcript_en": [l for l in extraction.get("transcript_en") or []] or None})
     if duration:
         await db.add_call_event("inbound", case_id=case["id"], phone=phone, duration_s=int(duration))
+    await ground(case["id"])
     refreshed = await db.get_case(case["id"])
     if refreshed:
         await publish(refreshed)
@@ -569,6 +570,7 @@ async def enrich(case_id: int, lines: list[dict]) -> None:
     """Gemini pass after a call: translate, summarize, and fill gaps the agent missed."""
     extraction = await gemini.extract_from_transcript(lines)
     if not extraction:
+        await ground(case_id)  # doesn't need Gemini
         return
     case = await db.get_case(case_id)
     if not case:
@@ -610,3 +612,27 @@ async def enrich(case_id: int, lines: list[dict]) -> None:
         await publish(updated)
         if incoming.get("address") and updated.get("lat") is None:
             spawn(locate(case_id))
+    await ground(case_id)
+
+
+async def ground(case_id: int) -> None:
+    """Clear critical details the caller never actually said, and flag the case for review."""
+    case = await db.get_case(case_id)
+    if not case:
+        return
+    changes = grounding.check(case)
+    if not changes:
+        return
+    log.info("%s: AI details not found in what the caller said, cleared: %s", case_number(case_id),
+             ", ".join(k for k in changes if k not in {"needs_review", "review_reason"}))
+    fields: dict[str, Any] = {k: case.get(k) for k in INCOMING_KEYS}
+    fields.update({k: v for k, v in changes.items() if k in INCOMING_KEYS})
+    fields.update(enriched=case.get("enriched"), neighborhood=case.get("neighborhood"),
+                  location_confidence=case.get("location_confidence"))
+    _with_score(fields)
+    if case.get("enriched"):
+        fields["summary_en"] = case["summary_en"]
+    updated = await db.update_case(case_id, {**changes, "base_priority": fields["base_priority"],
+                                             "reasons": fields["reasons"], "summary_en": fields["summary_en"]})
+    if updated:
+        await publish(updated)

@@ -75,8 +75,10 @@ class RescueExtraction(BaseModel):
 
 
 EXTRACT_PROMPT = """You help human flood-rescue dispatchers in Houston.
-Read the {kind} below and extract ONLY facts that are stated. Do not guess.
+Read the {kind} below and extract ONLY facts the caller (or post author) actually said. Do not guess.
 If something is not stated, leave it empty / unknown.
+Never infer injuries, medical needs, or a life threat. Only fill injuries, medical_needs and
+life_threatening if the caller said them in their own words. Questions the agent asked are not facts.
 Write summary_en for a dispatcher: who, where, how many, water level, the most urgent risk.
 {translation_rule}
 

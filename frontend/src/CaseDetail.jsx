@@ -72,6 +72,7 @@ export default function CaseDetail({ c, now, onClose, onChanged, draft, setDraft
       </header>
 
       <div className="detail-scroll">
+        {c.needs_review && <p className="review-badge">Needs review: {c.review_reason || 'check this case'}</p>}
         {c.life_threatening && <p className="life life-big">Life-threatening{c.critical_reason ? `: ${c.critical_reason}` : ''}</p>}
 
         <div className="detail-where">
