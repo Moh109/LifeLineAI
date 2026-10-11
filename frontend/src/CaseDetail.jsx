@@ -1,3 +1,4 @@
+import QRCode from 'qrcode'
 import { useEffect, useState } from 'react'
 import WaterGauge from './WaterGauge'
 import { SOURCE_TAGS, TRIAGE, UNITS, WATER_WORDS, api, clockTime, effectivePriority, labelFor, waitText } from './lib'
@@ -108,7 +109,8 @@ export default function CaseDetail({ c, now, onClose, onChanged, draft, setDraft
                 <input type="checkbox" checked={callBack} onChange={(e) => setCallBack(e.target.checked)} />
                 {`Call ${c.phone} back with the arrival time${labelFor(priority) === 'yellow' ? ' (optional for Delayed cases)' : ''}`}
               </label>
-            )}            <div className="actions">
+            )}
+            <div className="actions">
               <button type="submit" className="primary" disabled={busy}>
                 {c.status === 'assigned' ? 'Reassign' : callBack && c.can_call_back ? 'Assign and call back' : 'Assign team'}
               </button>
@@ -123,6 +125,8 @@ export default function CaseDetail({ c, now, onClose, onChanged, draft, setDraft
             {c.callback_status && <p className="callback">Callback: {c.callback_status}</p>}
           </form>
         )}
+
+        {!resolved && <CallCaller phone={c.phone} name={c.caller_name} />}
 
         <div className="actions secondary">
           {!resolved && <button type="button" onClick={() => setStatus('closed', 'Case closed.')} disabled={busy}>Close as duplicate or false</button>}
@@ -206,6 +210,32 @@ export default function CaseDetail({ c, now, onClose, onChanged, draft, setDraft
           </>
         )}
       </div>
+    </section>
+  )
+}
+
+// The dispatcher calls the caller back from their own phone: click the number (opens the laptop's
+// calling app, or the dialer on a phone) or scan the QR code with a phone camera.
+function CallCaller({ phone, name }) {
+  const [qr, setQr] = useState(null)
+  const real = phone && !phone.startsWith('+1555') // +1555 numbers are simulated callers
+
+  useEffect(() => {
+    if (!real) return
+    QRCode.toDataURL(`tel:${phone}`, { margin: 1, width: 132 }).then(setQr).catch(() => setQr(null))
+  }, [phone, real])
+
+  if (!real) return null
+  const pretty = /^\+1\d{10}$/.test(phone) ? `(${phone.slice(2, 5)}) ${phone.slice(5, 8)}-${phone.slice(8)}` : phone
+  return (
+    <section className="call-caller" aria-label="Call the caller">
+      <div>
+        <h3>Call {name ? name.split(' ')[0] : 'the caller'} back</h3>
+        <p className="muted">Let them know a team is on the way.</p>
+        <a className="call-link" href={`tel:${phone}`}>{pretty}</a>
+        <p className="muted small">Click to call from this computer, or scan the code with your phone.</p>
+      </div>
+      {qr && <img src={qr} alt={`QR code to call ${pretty}`} width="132" height="132" />}
     </section>
   )
 }
