@@ -1,6 +1,6 @@
 # Lifeline
 
-When disaster floods the 911 lines, Lifeline answers instead of hold music. A voice agent talks to the caller in their language, gets the rescue details, ranks them on a live map by danger, and calls them back when a team is assigned. Human dispatchers make every decision.
+When disaster floods the 911 lines, Lifeline answers instead of hold music. A voice agent talks to the caller in their language, gets the rescue details, and ranks them on a live map by danger for a human dispatcher. Human dispatchers make every decision.
 
 Built for CodeRED Orion, October 2026.
 
@@ -116,7 +116,9 @@ It prints a URL like `https://something.trycloudflare.com`. That's `YOUR_PUBLIC_
 
 **Check:** call the number. The case appears on the dashboard while you're still on the phone, and the transcript shows up a few seconds after you hang up. Backend logs print every tool call (`tool /tools/... <-`), which is the first place to look when something's off.
 
-### Step 6: Callbacks (Voice, 20 min)
+### Step 6: Callbacks (optional, not used in our current build)
+
+Skipped for now. The code is in place: without `CALLBACK_AGENT_ID` the dashboard just hides the callback option and the intake agent doesn't promise a callback. To turn it on later:
 
 1. Create a second agent `Lifeline Callback` from `agent/callback_agent_prompt.md`. Add its `update_from_callback` tool.
 2. Fill in `.env`:
@@ -161,7 +163,7 @@ It prints a URL like `https://something.trycloudflare.com`. That's `YOUR_PUBLIC_
 - [ ] Twilio account upgraded (not trial) and a teammate's phone ready as a backup caller
 - [ ] Clear old test cases: `curl -X POST "https://yourdomain.tech/api/demo/reset?all=true"`
 - [ ] Dashboard open full screen. Close the queue detail before judges arrive
-- [ ] One rehearsed flow: judge calls → pin drops → open case → **Assign and call back** → judge's phone rings → **Run Harvey surge**
+- [ ] One rehearsed flow: judge calls → alert + pin drop while they talk → open case → **Assign team** → transcript and English summary appear → **Run Harvey surge**
 - [ ] Backup video recorded by 11 am
 - [ ] Phone hotspot ready in case the venue Wi-Fi dies
 
@@ -175,7 +177,7 @@ It prints a URL like `https://something.trycloudflare.com`. That's `YOUR_PUBLIC_
 | No transcript after the call | Post-call webhook not set, or a signature mismatch (401 in logs) | Re-copy the HMAC secret into `ELEVENLABS_WEBHOOK_SECRET` and restart |
 | Phone call plays a Twilio trial message, gets rejected, or connects but the agent never hears you | Twilio account is still a trial | Upgrade the Twilio account (Step 2). The browser tester working while the phone doesn't is the giveaway |
 | Callback status says `failed: ...` | The error text says why | Usually the Twilio account is still a trial (upgrade it, see Step 2), or a wrong `ELEVENLABS_PHONE_NUMBER_ID` |
-| Callback checkbox greyed out | Callback env vars missing, or a simulated caller | Fill the Step 6 values. Simulated cases never call anyone |
+| No callback checkbox on a case | Callbacks are off (no `CALLBACK_AGENT_ID`), or a simulated caller | Expected in our build. Fill the Step 6 values to turn callbacks on |
 | Phone number shows as empty in cases | The `caller_phone` parameter isn't set to the `system__caller_id` dynamic variable | See `agent/tools.md`. The agent also asks for a callback number as a fallback |
 | "Add from a post" disabled | No Gemini key | Set `GEMINI_API_KEY` |
 | Dashboard says Reconnecting | Backend down | `journalctl -u lifeline -f` on the server |
@@ -202,7 +204,7 @@ Gemini and the voice agent only pull out facts. The score is plain rules in `bac
 
 | Prize | Where |
 | --- | --- |
-| ElevenLabs | Two agents, live inbound and outbound phone calls, multilingual, four server tools |
+| ElevenLabs | Live inbound phone calls on a real number, multilingual, three server tools called in parallel, post-call webhook |
 | Gemini | Post-call translation and summary, filling gaps the agent missed, rebuilding dropped calls, turning social posts into cases |
 | Backboard | Remembers every caller across calls; shown in the agent's repeat-caller greeting and on the case |
 | Tiger Data | `call_events` hypertable, a real-time continuous aggregate `calls_per_minute`, live surge chart from `time_bucket` |

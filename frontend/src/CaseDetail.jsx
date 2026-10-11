@@ -102,14 +102,13 @@ export default function CaseDetail({ c, now, onClose, onChanged, draft, setDraft
                 <input type="number" min="0" max="600" value={eta} onChange={(e) => setEta(e.target.value)} />
               </label>
             </div>
-            <label className="check">
-              <input type="checkbox" checked={callBack && c.can_call_back} disabled={!c.can_call_back}
-                onChange={(e) => setCallBack(e.target.checked)} />
-              {c.can_call_back
-                ? `Call ${c.phone} back with the arrival time${labelFor(priority) === 'yellow' ? ' (optional for Delayed cases)' : ''}`
-                : c.source === 'simulated' ? 'Simulated caller: no callback' : 'Callback unavailable (no phone number or callback not set up)'}
-            </label>
-            <div className="actions">
+            {/* Hidden when callbacks aren't set up (no CALLBACK_AGENT_ID) or the case has no real phone */}
+            {c.can_call_back && (
+              <label className="check">
+                <input type="checkbox" checked={callBack} onChange={(e) => setCallBack(e.target.checked)} />
+                {`Call ${c.phone} back with the arrival time${labelFor(priority) === 'yellow' ? ' (optional for Delayed cases)' : ''}`}
+              </label>
+            )}            <div className="actions">
               <button type="submit" className="primary" disabled={busy}>
                 {c.status === 'assigned' ? 'Reassign' : callBack && c.can_call_back ? 'Assign and call back' : 'Assign team'}
               </button>
