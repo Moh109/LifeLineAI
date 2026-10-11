@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { getDispatchKey } from './lib'
 
 // Live connection to the backend: one snapshot, then case/stat/alert events.
 export function useLive() {
@@ -17,7 +18,8 @@ export function useLive() {
 
     function connect() {
       const proto = location.protocol === 'https:' ? 'wss' : 'ws'
-      ws = new WebSocket(`${proto}://${location.host}/ws`)
+      const key = getDispatchKey()
+      ws = new WebSocket(`${proto}://${location.host}/ws${key ? `?key=${encodeURIComponent(key)}` : ''}`)
       ws.onopen = () => {
         setConnected(true)
         retry.current = 0

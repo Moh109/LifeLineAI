@@ -1,12 +1,32 @@
 // Shared helpers: API calls, priority math (mirrors backend/app/scoring.py), formatting.
 
+// Dispatch key: typed in once by the dispatcher and kept in this browser only. Never part of the build.
+const KEY_STORE = 'lifeline_dispatch_key'
+
+export function getDispatchKey() {
+  try {
+    return localStorage.getItem(KEY_STORE) || ''
+  } catch {
+    return ''
+  }
+}
+
+export function setDispatchKey(key) {
+  try {
+    localStorage.setItem(KEY_STORE, key)
+  } catch {
+    // storage blocked (private mode): the key just won't be remembered
+  }
+}
+
 export async function api(path, { method = 'GET', body } = {}) {
-  const res = await fetch(path, {
-    method,
-    headers: body ? { 'Content-Type': 'application/json' } : undefined,
-    body: body ? JSON.stringify(body) : undefined,
-  })
+  const headers = {}
+  if (body) headers['Content-Type'] = 'application/json'
+  const key = getDispatchKey()
+  if (key) headers['X-Dispatch-Key'] = key
+  const res = await fetch(path, { method, headers, body: body ? JSON.stringify(body) : undefined })
   const data = await res.json().catch(() => ({}))
+  if (res.status === 401) window.dispatchEvent(new Event('lifeline:need-key'))
   if (!res.ok) throw new Error(data.detail || `Request failed (${res.status})`)
   return data
 }

@@ -4,7 +4,7 @@ import IntakeDialog from './IntakeDialog'
 import MapView from './MapView'
 import Queue from './Queue'
 import SurgeChart from './SurgeChart'
-import { api, sortCases } from './lib'
+import { api, getDispatchKey, setDispatchKey, sortCases } from './lib'
 import { useLive } from './useLive'
 
 export default function App() {
@@ -14,6 +14,15 @@ export default function App() {
   const [now, setNow] = useState(Date.now())
   const [intakeOpen, setIntakeOpen] = useState(false)
   const [toast, setToast] = useState(null)
+  const [needKey, setNeedKey] = useState(false)
+
+  // Ask for the dispatch key if the server wants one (any 401 fires 'lifeline:need-key')
+  useEffect(() => {
+    const ask = () => setNeedKey(true)
+    window.addEventListener('lifeline:need-key', ask)
+    api('/api/stats').catch(() => {})
+    return () => window.removeEventListener('lifeline:need-key', ask)
+  }, [])
 
   useEffect(() => {
     const t = setInterval(() => setNow(Date.now()), 15000)
@@ -129,6 +138,28 @@ export default function App() {
         onCreated={(c) => { mergeCase(c); select(c.id) }} />
 
       {toast && <div key={toast.key} className={`toast ${toast.kind}`} role="status">{toast.text}</div>}
+      {needKey && <KeyGate />}
+    </div>
+  )
+}
+
+function KeyGate() {
+  const [key, setKey] = useState('')
+  const hadKey = Boolean(getDispatchKey())
+  const save = (e) => {
+    e.preventDefault()
+    setDispatchKey(key.trim())
+    location.reload()
+  }
+  return (
+    <div className="keygate" role="dialog" aria-modal="true" aria-labelledby="keygate-title">
+      <form onSubmit={save}>
+        <h2 id="keygate-title">Dispatcher key</h2>
+        <p className="muted">{hadKey ? 'That key was not accepted. Try again.' : 'Enter the dispatch key to open the dashboard. This browser will remember it.'}</p>
+        <input type="password" value={key} onChange={(e) => setKey(e.target.value)} autoFocus required
+          autoComplete="current-password" aria-label="Dispatch key" />
+        <button className="primary" type="submit">Open dashboard</button>
+      </form>
     </div>
   )
 }

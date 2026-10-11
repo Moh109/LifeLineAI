@@ -1,6 +1,7 @@
 """Lifeline API: voice-agent tools, ElevenLabs webhook, dispatcher API, live updates."""
 
 import asyncio
+import hmac
 import json
 import logging
 from contextlib import asynccontextmanager
@@ -51,6 +52,16 @@ app.add_middleware(CORSMiddleware, allow_origins=config.CORS_ORIGINS, allow_meth
 def require_tool_secret(x_lifeline_secret: str | None = Header(default=None)) -> None:
     if config.TOOL_SECRET and x_lifeline_secret != config.TOOL_SECRET:
         raise HTTPException(status_code=401, detail="bad tool secret")
+
+
+def _dispatch_key_ok(key: str | None) -> bool:
+    return not config.DISPATCH_KEY or hmac.compare_digest(key or "", config.DISPATCH_KEY)
+
+
+def require_dispatch_key(x_dispatch_key: str | None = Header(default=None)) -> None:
+    """Dashboard routes: the browser sends the key the dispatcher typed in (X-Dispatch-Key)."""
+    if not _dispatch_key_ok(x_dispatch_key):
+        raise HTTPException(status_code=401, detail="dispatch key required")
 
 
 async def _tool_body(request: Request) -> dict:
@@ -163,13 +174,13 @@ async def health():
             "surge_running": simulator.running()}
 
 
-@app.get("/api/cases")
+@app.get("/api/cases", dependencies=[Depends(require_dispatch_key)])
 async def list_cases(include_closed: bool = False):
     rows = await db.list_cases(include_closed=include_closed)
     return [cases.serialize(r) for r in rows]
 
 
-@app.get("/api/cases/{case_id}")
+@app.get("/api/cases/{case_id}", dependencies=[Depends(require_dispatch_key)])
 async def get_case(case_id: int):
     case = await db.get_case(case_id)
     if not case:
@@ -179,12 +190,12 @@ async def get_case(case_id: int):
     return data
 
 
-@app.get("/api/stats")
+@app.get("/api/stats", dependencies=[Depends(require_dispatch_key)])
 async def stats():
     return await db.stats()
 
 
-@app.post("/api/cases/{case_id}/assign")
+@app.post("/api/cases/{case_id}/assign", dependencies=[Depends(require_dispatch_key)])
 async def assign(case_id: int, body: AssignBody):
     try:
         case = await cases.assign(case_id, body.unit.strip(), body.eta_minutes, body.call_back)
@@ -193,7 +204,7 @@ async def assign(case_id: int, body: AssignBody):
     return cases.serialize(case)
 
 
-@app.post("/api/cases/{case_id}/callback")
+@app.post("/api/cases/{case_id}/callback", dependencies=[Depends(require_dispatch_key)])
 async def retry_callback(case_id: int):
     case = await db.get_case(case_id)
     if not case or not case.get("unit"):
@@ -202,7 +213,7 @@ async def retry_callback(case_id: int):
     return cases.serialize(case)
 
 
-@app.post("/api/cases/{case_id}/status")
+@app.post("/api/cases/{case_id}/status", dependencies=[Depends(require_dispatch_key)])
 async def set_status(case_id: int, body: StatusBody):
     try:
         case = await cases.set_status(case_id, body.status)
@@ -218,7 +229,7 @@ class LocationBody(BaseModel):
     lng: float = Field(ge=-180, le=180)
 
 
-@app.post("/api/cases/{case_id}/location")
+@app.post("/api/cases/{case_id}/location", dependencies=[Depends(require_dispatch_key)])
 async def set_location(case_id: int, body: LocationBody):
     try:
         case = await cases.set_location(case_id, body.lat, body.lng)
@@ -227,7 +238,7 @@ async def set_location(case_id: int, body: LocationBody):
     return cases.serialize(case)
 
 
-@app.post("/api/intake/text")
+@app.post("/api/intake/text", dependencies=[Depends(require_dispatch_key)])
 async def intake_text(body: IntakeTextBody):
     """Paste a social media rescue post or text message; Gemini turns it into a case."""
     if not config.GEMINI_API_KEYS:
@@ -250,7 +261,7 @@ async def intake_text(body: IntakeTextBody):
     return cases.serialize(case)
 
 
-@app.post("/api/demo/surge")
+@app.post("/api/demo/surge", dependencies=[Depends(require_dispatch_key)])
 async def start_surge(body: SurgeBody | None = None):
     body = body or SurgeBody()
     if not simulator.start(body.count, body.seconds):
@@ -258,7 +269,7 @@ async def start_surge(body: SurgeBody | None = None):
     return {"ok": True, "count": body.count, "seconds": body.seconds}
 
 
-@app.post("/api/demo/reset")
+@app.post("/api/demo/reset", dependencies=[Depends(require_dispatch_key)])
 async def reset(all: bool = False):
     if simulator.running():
         raise HTTPException(409, "Wait for the surge to finish")
@@ -269,6 +280,10 @@ async def reset(all: bool = False):
 
 @app.websocket("/ws")
 async def websocket(ws: WebSocket):
+    # Browsers can't set headers on a WebSocket, so the dashboard sends the key as ?key=
+    if not _dispatch_key_ok(ws.query_params.get("key")):
+        await ws.close(code=4401)  # refused before any case data is sent
+        return
     await hub.connect(ws)
     try:
         rows = await db.list_cases()
