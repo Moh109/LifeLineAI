@@ -534,6 +534,8 @@ async def handle_post_call(event: dict) -> None:
         return
 
     # The call ended before submit_rescue_request: rebuild the request from the transcript.
+    log.info("Call %s ended with no case. Transcript: %s", conversation_id,
+             " | ".join(f"{l['role']}: {l['message']}" for l in lines)[:1000])
     if not any(l["role"] == "user" for l in lines):
         return
     extraction = await gemini.extract_from_transcript(lines)
