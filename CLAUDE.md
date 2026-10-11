@@ -58,3 +58,13 @@ python scripts\fake_call.py --repeat --phone +18325550199
 - Backboard API paths in `memory.py` are unverified; failures are caught and non-fatal.
 - Only `+1555…` numbers count as fake. Other test numbers will get real callback attempts once callbacks are configured.
 - Dashboard/API has no login: don't share the public URL; `/api/demo/reset?all=true` wipes everything.
+- Campus Wi-Fi blocks QUIC: run the tunnel with `--protocol http2`
+  (`& 'C:\Program Files (x86)\cloudflared\cloudflared.exe' tunnel --protocol http2 --url http://localhost:8000`).
+  Quick-tunnel URL changes on every restart -> update all ElevenLabs tool URLs + post-call webhook.
+- In ElevenLabs, `caller_phone` is set to Required: OFF on every tool (browser/web calls have no caller ID).
+- ElevenLabs fires tools in parallel; `cases._case_lock` prevents duplicate cases. Don't remove it.
+- If the agent *says* it flagged/saved but no `tool /tools/...` line is in the backend log, the tool
+  isn't attached/published in ElevenLabs. Calls that end with no case log their transcript.
+- The ElevenLabs tester always uses the same caller ID, so later test calls merge into its open case
+  (repeat-caller logic). Clear test cases before a clean test or the demo.
+- Midnight checkpoint PASSED Oct 10 21:38 (browser call -> live case LF-1619, pin, transcript).
