@@ -36,7 +36,7 @@ Do the steps in order. Each one ends with a check. Don't move on until it passes
 | Who | Get | Where |
 | --- | --- | --- |
 | Voice | ElevenLabs account + API key | elevenlabs.io → profile → API keys |
-| Voice | Twilio account + a phone number | twilio.com. Upgrade with $20 if you can: trial numbers play a trial message and can only call verified numbers |
+| Voice | Twilio account + a phone number | twilio.com. **Upgrading (about $20) is required, not optional:** trial accounts only allow verified numbers and strip `<Stream>`, which ElevenLabs needs. See Step 2 |
 | Backend | Gemini API key | aistudio.google.com → Get API key |
 | Backend | Tiger Data service | tigerdata.com → create a service → copy the connection string. Ask at the MLH table for credits |
 | Infra | Vultr account + credits | MLH table / vultr.com |
@@ -56,7 +56,11 @@ Put every key in the team's private chat, never in GitHub.
 
 ### Step 2: Real phone call (Voice, 20 min)
 
-1. Twilio: buy a local number (713, 832 or 281 area code if available).
+> **A Twilio trial account will not work. Upgrade first.** Trial accounts only allow verified numbers, and they strip the `<Stream>` instruction that ElevenLabs uses to carry the call audio, so the agent never hears the caller. Upgrade in the Twilio console (Billing → Upgrade, about $20 of credit) *before* buying the number.
+>
+> Money plan: everything else (Steps 3 to 5, the browser tester, `fake_call.py`, the cloudflared tunnel) is free. Pay only after a browser test call creates a case on the dashboard end to end. If that never works, use the free ElevenLabs web call (QR code to a call page) instead of a phone number, and skip this step.
+
+1. Twilio: upgrade the account, then buy a local number (713, 832 or 281 area code if available).
 2. ElevenLabs → **Phone numbers** → **Import number** → From Twilio. Enter the number, Account SID and Auth Token from the Twilio console.
 3. Assign `Lifeline Intake` to the number.
 4. Call it from your phone.
@@ -126,7 +130,7 @@ It prints a URL like `https://something.trycloudflare.com`. That's `YOUR_PUBLIC_
 3. If you turned on First message and Language overrides in the callback agent's Security tab, set `CALLBACK_ALLOW_OVERRIDES=true`.
 4. Restart the backend.
 
-**Check:** call in, open your case on the dashboard, click **Assign and call back**. Your phone rings with the ETA. On a Twilio trial, the phone you call back must be verified in Twilio first.
+**Check:** call in, open your case on the dashboard, click **Assign and call back**. Your phone rings with the ETA. This needs the upgraded Twilio account from Step 2; a trial account cannot place it.
 
 ### Step 7: Gemini and Backboard (Backend, 15 min)
 
@@ -154,7 +158,7 @@ It prints a URL like `https://something.trycloudflare.com`. That's `YOUR_PUBLIC_
 ## Demo checklist
 
 - [ ] Phone number printed big on a card for judges to call
-- [ ] Teammate's phone verified in Twilio as a backup caller
+- [ ] Twilio account upgraded (not trial) and a teammate's phone ready as a backup caller
 - [ ] Clear old test cases: `curl -X POST "https://yourdomain.tech/api/demo/reset?all=true"`
 - [ ] Dashboard open full screen. Close the queue detail before judges arrive
 - [ ] One rehearsed flow: judge calls → pin drops → open case → **Assign and call back** → judge's phone rings → **Run Harvey surge**
@@ -169,7 +173,8 @@ It prints a URL like `https://something.trycloudflare.com`. That's `YOUR_PUBLIC_
 | Case appears but no pin | Address didn't geocode | The card says "not on map". Open it and click **Place pin by hand**. For better matching, set `GOOGLE_MAPS_API_KEY` |
 | Pin is in the right area but not the exact house | Street not found, neighborhood was | Dashed pin outline means approximate. Drag to fix |
 | No transcript after the call | Post-call webhook not set, or a signature mismatch (401 in logs) | Re-copy the HMAC secret into `ELEVENLABS_WEBHOOK_SECRET` and restart |
-| Callback status says `failed: ...` | The error text says why | Usually an unverified number on a Twilio trial, or a wrong `ELEVENLABS_PHONE_NUMBER_ID` |
+| Phone call plays a Twilio trial message, gets rejected, or connects but the agent never hears you | Twilio account is still a trial | Upgrade the Twilio account (Step 2). The browser tester working while the phone doesn't is the giveaway |
+| Callback status says `failed: ...` | The error text says why | Usually the Twilio account is still a trial (upgrade it, see Step 2), or a wrong `ELEVENLABS_PHONE_NUMBER_ID` |
 | Callback checkbox greyed out | Callback env vars missing, or a simulated caller | Fill the Step 6 values. Simulated cases never call anyone |
 | Phone number shows as empty in cases | The `caller_phone` parameter isn't set to the `system__caller_id` dynamic variable | See `agent/tools.md`. The agent also asks for a callback number as a fallback |
 | "Add from a post" disabled | No Gemini key | Set `GEMINI_API_KEY` |
