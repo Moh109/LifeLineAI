@@ -40,7 +40,7 @@ python3 -m venv .venv
 echo "==> Building the dashboard"
 cd "$APP_DIR/frontend"
 npm install --no-audit --no-fund
-npm run build
+npm run build:live   # plain `npm run build` makes the static demo site
 
 echo "==> Service"
 sed "s#__APP_DIR__#$APP_DIR#g" "$APP_DIR/deploy/lifeline.service" > /etc/systemd/system/lifeline.service

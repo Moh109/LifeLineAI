@@ -4,7 +4,21 @@ When disaster floods the 911 lines, Lifeline answers instead of hold music. A vo
 
 Built for CodeRED Orion, October 2026.
 
-**Live dashboard:** https://lifeline-ai.us (dispatchers enter the team's dispatch key once).
+**Live demo:** https://lifeline-ai.us
+
+## Live demo
+
+The site at https://lifeline-ai.us is now a **static demo** of the dispatcher dashboard, hosted on Vercel. It runs
+entirely in the browser on 11 made-up Houston cases (fake 555 numbers, block-level addresses), scored by the real
+rules in `backend/app/scoring.py`. Assigning a team, changing a status, fixing a pin and the Harvey surge all work,
+but only in your browser tab: there is no backend, no phone line, and nothing is saved.
+
+During CodeRED Orion (Oct 2026) the full system ran live: the voice agent (ElevenLabs + Twilio), the FastAPI
+backend and the Postgres database. All of that code is still in this repo, and the steps below run it.
+
+- `npm run build` (in `frontend/`) builds the static demo; `npm run build:live` builds the real dashboard for the backend.
+- `npm run dev:demo` runs the demo locally; `npm run dev` is the real dashboard (needs the backend on :8000).
+- Demo data: `frontend/src/demo/*.json`, made by `python scripts/build_static_demo.py` (`--check` verifies it still matches the scoring rules).
 
 ```
 Caller's phone ─▶ Twilio number ─▶ ElevenLabs intake agent ──tools──▶ Backend (FastAPI)
@@ -26,6 +40,7 @@ Caller's phone ─▶ Twilio number ─▶ ElevenLabs intake agent ──tools�
 | `frontend/` | Dispatcher dashboard (React + Leaflet) |
 | `scripts/fake_call.py` | Pretends to be ElevenLabs, so you can test without a phone |
 | `scripts/seed_demo.py` | Loads a clean 8-case demo set (asks before clearing) |
+| `scripts/build_static_demo.py` | Writes the sample cases for the static demo site |
 | `scripts/rescore_cases.py`, `scripts/ground_cases.py` | Re-apply the scoring and grounding rules to existing cases (preview first, `--apply` to write) |
 | `backend/tests/` | pytest suite: run `.venv\Scripts\python.exe -m pytest` from `backend` |
 | `deploy/` | One-command Vultr setup with HTTPS on your domain |
@@ -214,7 +229,7 @@ Gemini and the voice agent only pull out facts. The score is plain rules in `bac
 | Gemini | Post-call translation and summary, filling gaps the agent missed, rebuilding dropped calls, turning social posts into cases |
 | Backboard | Not enabled in our deployment. The code is ready: set `BACKBOARD_API_KEY` to remember callers across calls |
 | Tiger Data | `call_events` hypertable, a real-time continuous aggregate `calls_per_minute`, live surge chart from `time_bucket` |
-| Vultr + Porkbun | Production host (Ubuntu, systemd, Caddy with automatic HTTPS) at https://lifeline-ai.us |
+| Vultr + Porkbun | Production host during the hackathon (Ubuntu, systemd, Caddy with automatic HTTPS) at https://lifeline-ai.us; the domain now serves the static demo |
 
 ## API
 

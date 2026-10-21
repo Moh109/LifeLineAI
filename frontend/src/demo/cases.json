@@ -1,0 +1,610 @@
+[
+ {
+  "id": 401,
+  "case_number": "LF-1401",
+  "source": "call",
+  "neighborhood": "Meyerland",
+  "enriched": true,
+  "status": "open",
+  "location_confidence": "high",
+  "lat": 29.6836,
+  "lng": -95.45479999999999,
+  "vulnerable": [
+   "elderly",
+   "baby"
+  ],
+  "medical_needs": [
+   "oxygen"
+  ],
+  "call_count": 1,
+  "caller_name": "Denise",
+  "language": "English",
+  "address": "7300 block of Endicott Ln",
+  "people_count": 4,
+  "water_level": "roof",
+  "water_rising": true,
+  "battery_pct": 12,
+  "notes": "Family on the roof. Grandfather on oxygen, power is out.",
+  "summary_en": "Four people on the roof in the 7300 block of Endicott Ln, water still rising. A baby and an elderly man who uses oxygen; the power is out. Phone at 12%.",
+  "transcript": [
+   {
+    "role": "agent",
+    "message": "Lifeline emergency line. Are you or anyone with you in danger right now?",
+    "call": "intake"
+   },
+   {
+    "role": "user",
+    "message": "We had to climb onto the roof, the water is still coming up. It's me, my husband, our baby and my dad.",
+    "call": "intake"
+   },
+   {
+    "role": "agent",
+    "message": "I'm getting help to you. Does anyone need medicine or a machine to breathe?",
+    "call": "intake"
+   },
+   {
+    "role": "user",
+    "message": "My dad is on oxygen and the power's been out for two hours. My phone is at twelve percent.",
+    "call": "intake"
+   },
+   {
+    "role": "agent",
+    "message": "Understood. Stay on the roof and keep your phone off when you're not using it.",
+    "call": "intake"
+   }
+  ],
+  "base_priority": 94,
+  "reasons": [
+   "Water at roof (+40)",
+   "Water rising (+10)",
+   "Depends on medicine or power (+15)",
+   "Vulnerable: elderly, baby or child (+16)",
+   "4 people (+8)",
+   "Phone at 12%, may lose contact (+5)"
+  ],
+  "phone": "•••-•••-0101",
+  "can_call_back": false,
+  "recordings": [],
+  "memory": [],
+  "minutes_ago": 4
+ },
+ {
+  "id": 402,
+  "case_number": "LF-1402",
+  "source": "call",
+  "neighborhood": "Fifth Ward",
+  "enriched": true,
+  "status": "open",
+  "location_confidence": "high",
+  "lat": 29.772,
+  "lng": -95.337,
+  "vulnerable": [],
+  "medical_needs": [],
+  "call_count": 1,
+  "caller_name": "Terrence",
+  "language": "English",
+  "address": "3100 block of Lyons Ave",
+  "people_count": 2,
+  "water_level": "chest",
+  "water_rising": true,
+  "life_threatening": true,
+  "critical_reason": "Neighbor pulled from the water, not responding",
+  "notes": "Caller pulled a neighbor out of the water. Neighbor not responding.",
+  "summary_en": "Two people in the 3100 block of Lyons Ave with chest-deep rising water. The caller pulled a neighbor out of the water and he is not responding.",
+  "transcript": [
+   {
+    "role": "agent",
+    "message": "Lifeline emergency line. Is anyone not breathing, unconscious, or bleeding heavily?",
+    "call": "intake"
+   },
+   {
+    "role": "user",
+    "message": "My neighbor, I pulled him out of the water and he's not answering me. The water's at my chest.",
+    "call": "intake"
+   },
+   {
+    "role": "agent",
+    "message": "I've marked this as life-threatening for a human dispatcher right now. Is he breathing?",
+    "call": "intake"
+   },
+   {
+    "role": "user",
+    "message": "I think so, barely. Please hurry.",
+    "call": "intake"
+   }
+  ],
+  "base_priority": 76,
+  "reasons": [
+   "Life-threatening (+30)",
+   "Water at chest (+32)",
+   "Water rising (+10)",
+   "2 people (+4)"
+  ],
+  "phone": "•••-•••-0102",
+  "can_call_back": false,
+  "recordings": [],
+  "memory": [],
+  "minutes_ago": 7
+ },
+ {
+  "id": 403,
+  "case_number": "LF-1403",
+  "source": "call",
+  "neighborhood": "Greenspoint",
+  "enriched": true,
+  "status": "open",
+  "location_confidence": "high",
+  "lat": 29.949,
+  "lng": -95.411,
+  "vulnerable": [
+   "child",
+   "elderly"
+  ],
+  "medical_needs": [
+   "insulin"
+  ],
+  "call_count": 1,
+  "caller_name": "Guadalupe",
+  "language": "Spanish",
+  "address": "400 block of Greens Rd",
+  "people_count": 5,
+  "water_level": "waist",
+  "water_rising": true,
+  "notes": "Five people, two kids. Father is diabetic and his insulin is running out.",
+  "summary_en": "Five people in the 400 block of Greens Rd with waist-deep rising water, including two children and an elderly father who needs insulin.",
+  "transcript": [
+   {
+    "role": "agent",
+    "message": "Línea de emergencia Lifeline. Cuénteme qué está pasando.",
+    "call": "intake"
+   },
+   {
+    "role": "user",
+    "message": "Estamos atrapados, el agua nos llega a la cintura y sigue subiendo. Mi papá es diabético y casi no le queda insulina.",
+    "call": "intake"
+   },
+   {
+    "role": "agent",
+    "message": "¿Cuántas personas están con usted?",
+    "call": "intake"
+   },
+   {
+    "role": "user",
+    "message": "Somos cinco, con mis dos niños.",
+    "call": "intake"
+   }
+  ],
+  "transcript_en": [
+   {
+    "role": "agent",
+    "message": "Lifeline emergency line. Tell me what's happening."
+   },
+   {
+    "role": "caller",
+    "message": "We're trapped, the water is up to our waists and still rising. My dad is diabetic and he's almost out of insulin."
+   },
+   {
+    "role": "agent",
+    "message": "How many people are with you?"
+   },
+   {
+    "role": "caller",
+    "message": "There are five of us, with my two kids."
+   }
+  ],
+  "base_priority": 75,
+  "reasons": [
+   "Water at waist (+24)",
+   "Water rising (+10)",
+   "Depends on medicine or power (+15)",
+   "Vulnerable: elderly, baby or child (+16)",
+   "5 people (+10)"
+  ],
+  "phone": "•••-•••-0103",
+  "can_call_back": false,
+  "recordings": [],
+  "memory": [],
+  "minutes_ago": 18
+ },
+ {
+  "id": 404,
+  "case_number": "LF-1404",
+  "source": "call",
+  "neighborhood": "Kashmere Gardens",
+  "enriched": true,
+  "status": "open",
+  "location_confidence": "high",
+  "lat": 29.801000000000002,
+  "lng": -95.33,
+  "vulnerable": [
+   "disabled"
+  ],
+  "medical_needs": [],
+  "call_count": 1,
+  "caller_name": "Evelyn",
+  "language": "English",
+  "address": "4800 block of Lockwood Dr",
+  "people_count": 1,
+  "water_level": "knee",
+  "age": "81",
+  "notes": "Uses a wheelchair, alone in the house.",
+  "summary_en": "An 81-year-old woman who uses a wheelchair is alone in the 4800 block of Lockwood Dr with knee-deep water inside. She can't leave on her own.",
+  "transcript": [
+   {
+    "role": "agent",
+    "message": "Lifeline emergency line. Tell me what's happening.",
+    "call": "intake"
+   },
+   {
+    "role": "user",
+    "message": "I'm in my wheelchair and I'm by myself. There's water up to my knees in the living room.",
+    "call": "intake"
+   },
+   {
+    "role": "agent",
+    "message": "Can you get to a higher spot in the house?",
+    "call": "intake"
+   },
+   {
+    "role": "user",
+    "message": "No, I can't get out of the chair on my own.",
+    "call": "intake"
+   }
+  ],
+  "base_priority": 40,
+  "reasons": [
+   "Water at knee (+12)",
+   "Vulnerable: elderly, disabled (+16)",
+   "1 person (+2)",
+   "Can't evacuate alone (+10, at least Urgent)"
+  ],
+  "phone": "•••-•••-0104",
+  "can_call_back": false,
+  "recordings": [],
+  "memory": [],
+  "minutes_ago": 26
+ },
+ {
+  "id": 405,
+  "case_number": "LF-1405",
+  "source": "call",
+  "neighborhood": "Sunnyside",
+  "enriched": true,
+  "status": "open",
+  "location_confidence": "high",
+  "lat": 29.671,
+  "lng": -95.35300000000001,
+  "vulnerable": [],
+  "medical_needs": [],
+  "call_count": 2,
+  "caller_name": "Andre",
+  "language": "English",
+  "address": "3700 block of Bellfort Ave",
+  "people_count": 3,
+  "water_level": "knee",
+  "water_rising": true,
+  "notes": "Called twice. Water rising.",
+  "summary_en": "Three people in the 3700 block of Bellfort Ave with knee-deep rising water. Second call from this number.",
+  "transcript": [
+   {
+    "role": "user",
+    "message": "Water's at our knees and it's rising. Three of us, 3700 block of Bellfort.",
+    "call": "intake"
+   },
+   {
+    "role": "agent",
+    "message": "I have your request. Has anything changed since you last called?",
+    "call": "intake"
+   },
+   {
+    "role": "user",
+    "message": "It's still coming up. Nobody's here yet.",
+    "call": "intake"
+   }
+  ],
+  "base_priority": 28,
+  "reasons": [
+   "Water at knee (+12)",
+   "Water rising (+10)",
+   "3 people (+6)"
+  ],
+  "phone": "•••-•••-0105",
+  "can_call_back": false,
+  "recordings": [],
+  "memory": [
+   "[Oct 21 14:02 UTC] 3 people at 3700 block of Bellfort Ave. Water at knee and rising.",
+   "[Oct 21 14:19 UTC] Called again: water still rising, no team yet."
+  ],
+  "minutes_ago": 34
+ },
+ {
+  "id": 406,
+  "case_number": "LF-1406",
+  "source": "call",
+  "neighborhood": "Alief",
+  "enriched": true,
+  "status": "open",
+  "location_confidence": "high",
+  "lat": 29.705,
+  "lng": -95.58800000000001,
+  "vulnerable": [
+   "elderly"
+  ],
+  "medical_needs": [],
+  "call_count": 1,
+  "caller_name": "Lan",
+  "language": "Vietnamese",
+  "address": "11200 block of Bissonnet St",
+  "people_count": 2,
+  "water_level": "waist",
+  "notes": "Elderly couple, water inside the house.",
+  "summary_en": "An elderly couple in the 11200 block of Bissonnet St with waist-deep water inside the house.",
+  "transcript": [
+   {
+    "role": "agent",
+    "message": "Đường dây khẩn cấp Lifeline. Chuyện gì đang xảy ra?",
+    "call": "intake"
+   },
+   {
+    "role": "user",
+    "message": "Nước đã lên tới thắt lưng trong nhà. Tôi và chồng tôi, cả hai đều đã già.",
+    "call": "intake"
+   }
+  ],
+  "transcript_en": [
+   {
+    "role": "agent",
+    "message": "Lifeline emergency line. What is happening?"
+   },
+   {
+    "role": "caller",
+    "message": "The water is up to our waists inside the house. My husband and me, we're both old."
+   }
+  ],
+  "base_priority": 36,
+  "reasons": [
+   "Water at waist (+24)",
+   "Vulnerable: elderly (+8)",
+   "2 people (+4)"
+  ],
+  "phone": "•••-•••-0106",
+  "can_call_back": false,
+  "recordings": [],
+  "memory": [],
+  "minutes_ago": 12
+ },
+ {
+  "id": 407,
+  "case_number": "LF-1407",
+  "source": "call",
+  "neighborhood": "Kingwood",
+  "enriched": true,
+  "status": "open",
+  "location_confidence": "approximate",
+  "lat": 30.0499,
+  "lng": -95.1855,
+  "vulnerable": [],
+  "medical_needs": [],
+  "call_count": 1,
+  "caller_name": "Rachel",
+  "language": "English",
+  "landmark": "the apartments behind the Kingwood Dr shopping center",
+  "people_count": 3,
+  "water_level": "ankle",
+  "notes": "Couldn't give a street address. Ankle-deep water in the parking lot.",
+  "summary_en": "Three people at an apartment complex off Kingwood Dr with ankle-deep water. No street address yet, so the pin marks the neighborhood.",
+  "transcript": [
+   {
+    "role": "user",
+    "message": "We're at the apartments behind the shopping center on Kingwood Drive. Water's at our ankles in the parking lot.",
+    "call": "intake"
+   },
+   {
+    "role": "agent",
+    "message": "Do you know the street number or the name of the complex?",
+    "call": "intake"
+   },
+   {
+    "role": "user",
+    "message": "No, sorry, we just moved here.",
+    "call": "intake"
+   }
+  ],
+  "base_priority": 11,
+  "reasons": [
+   "Water at ankle (+5)",
+   "3 people (+6)",
+   "Pin is approximate (neighborhood only): confirm address"
+  ],
+  "phone": "•••-•••-0107",
+  "can_call_back": false,
+  "recordings": [],
+  "memory": [],
+  "minutes_ago": 21
+ },
+ {
+  "id": 408,
+  "case_number": "LF-1408",
+  "source": "call",
+  "neighborhood": "Sharpstown",
+  "enriched": true,
+  "status": "open",
+  "location_confidence": "high",
+  "lat": 29.697,
+  "lng": -95.532,
+  "vulnerable": [],
+  "medical_needs": [],
+  "call_count": 1,
+  "caller_name": "Unknown caller",
+  "language": "English",
+  "landmark": "strip mall on Bellaire Blvd near Fondren Rd",
+  "people_count": 60,
+  "water_level": "ankle",
+  "notes": "Caller says 60 people at a strip mall. Count unverified.",
+  "summary_en": "Caller says about 60 people are stuck at a strip mall on Bellaire Blvd near Fondren Rd with ankle-deep water. Count not verified.",
+  "transcript": [
+   {
+    "role": "user",
+    "message": "There's like sixty people stuck at the strip mall on Bellaire by Fondren, the water's at our ankles.",
+    "call": "intake"
+   }
+  ],
+  "base_priority": 15,
+  "reasons": [
+   "Water at ankle (+5)",
+   "60 people (+10)",
+   "Verify: unusually high people count"
+  ],
+  "needs_review": true,
+  "review_reason": "Unusually high people count: verify",
+  "phone": "•••-•••-0108",
+  "can_call_back": false,
+  "recordings": [],
+  "memory": [],
+  "minutes_ago": 29
+ },
+ {
+  "id": 409,
+  "case_number": "LF-1409",
+  "source": "call",
+  "neighborhood": "East End",
+  "enriched": true,
+  "status": "assigned",
+  "location_confidence": "high",
+  "lat": 29.734,
+  "lng": -95.31599999999999,
+  "vulnerable": [],
+  "medical_needs": [],
+  "call_count": 1,
+  "caller_name": "Omar",
+  "language": "English",
+  "address": "6900 block of Harrisburg Blvd",
+  "people_count": 2,
+  "water_level": "none",
+  "injuries": "burns on both hands",
+  "notes": "House fire, not flood related.",
+  "unit": "High-water truck T-7",
+  "eta_minutes": 12,
+  "summary_en": "House fire in the 6900 block of Harrisburg Blvd. Two people got out; one has burns on both hands.",
+  "transcript": [
+   {
+    "role": "user",
+    "message": "There's a fire in my house, we got out but my brother burned both his hands.",
+    "call": "intake"
+   },
+   {
+    "role": "agent",
+    "message": "Is anyone still inside?",
+    "call": "intake"
+   },
+   {
+    "role": "user",
+    "message": "No, we're both outside on the sidewalk.",
+    "call": "intake"
+   }
+  ],
+  "base_priority": 14,
+  "reasons": [
+   "Injury reported (+10)",
+   "2 people (+4)"
+  ],
+  "phone": "•••-•••-0109",
+  "can_call_back": false,
+  "recordings": [],
+  "memory": [],
+  "minutes_ago": 41,
+  "assigned_minutes_ago": 8
+ },
+ {
+  "id": 410,
+  "case_number": "LF-1410",
+  "source": "call",
+  "neighborhood": "Bear Creek",
+  "enriched": true,
+  "status": "assigned",
+  "location_confidence": "high",
+  "lat": 29.833,
+  "lng": -95.663,
+  "vulnerable": [
+   "child"
+  ],
+  "medical_needs": [],
+  "call_count": 1,
+  "caller_name": "Hannah",
+  "language": "English",
+  "address": "16000 block of Clay Rd",
+  "people_count": 4,
+  "water_level": "chest",
+  "water_rising": true,
+  "pets": "2 dogs",
+  "unit": "Boat B-2",
+  "eta_minutes": 20,
+  "summary_en": "Four people including a child in the 16000 block of Clay Rd with chest-deep rising water. Two dogs with them.",
+  "transcript": [
+   {
+    "role": "user",
+    "message": "The water is up to my chest downstairs, we went up to the second floor. My son is six. We have two dogs.",
+    "call": "intake"
+   },
+   {
+    "role": "agent",
+    "message": "Stay upstairs. A team is being assigned.",
+    "call": "intake"
+   }
+  ],
+  "base_priority": 58,
+  "reasons": [
+   "Water at chest (+32)",
+   "Water rising (+10)",
+   "Vulnerable: baby or child (+8)",
+   "4 people (+8)"
+  ],
+  "phone": "•••-•••-0110",
+  "can_call_back": false,
+  "recordings": [],
+  "memory": [],
+  "minutes_ago": 55,
+  "assigned_minutes_ago": 15
+ },
+ {
+  "id": 411,
+  "case_number": "LF-1411",
+  "source": "call",
+  "neighborhood": "Clear Lake",
+  "enriched": true,
+  "status": "rescued",
+  "location_confidence": "high",
+  "lat": 29.558,
+  "lng": -95.127,
+  "vulnerable": [],
+  "medical_needs": [],
+  "call_count": 1,
+  "caller_name": "Victor",
+  "language": "English",
+  "address": "1500 block of Bay Area Blvd",
+  "people_count": 2,
+  "water_level": "waist",
+  "unit": "Boat B-1",
+  "eta_minutes": 15,
+  "summary_en": "Two adults in the 1500 block of Bay Area Blvd with waist-deep water. Picked up by Boat B-1.",
+  "transcript": [
+   {
+    "role": "user",
+    "message": "My wife and I are stuck, the water's at our waist and the car is gone.",
+    "call": "intake"
+   }
+  ],
+  "base_priority": 28,
+  "reasons": [
+   "Water at waist (+24)",
+   "2 people (+4)"
+  ],
+  "phone": "•••-•••-0111",
+  "can_call_back": false,
+  "recordings": [],
+  "memory": [],
+  "minutes_ago": 95,
+  "assigned_minutes_ago": 70,
+  "resolved_minutes_ago": 40
+ }
+]
