@@ -1,6 +1,6 @@
 import { memo, useMemo, useState } from 'react'
 import WaterGauge from './WaterGauge'
-import { SOURCE_TAGS, TRIAGE, WATER_WORDS, effectivePriority, isWaterCase, labelFor, waitText } from './lib'
+import { DEMO, SOURCE_TAGS, TRIAGE, WATER_WORDS, effectivePriority, isWaterCase, labelFor, waitText } from './lib'
 
 const TABS = [
   { id: 'open', name: 'Waiting', match: (c) => c.status === 'open' },
@@ -33,7 +33,7 @@ export default function Queue({ cases, now, onSelect }) {
       {list.length === 0 && (
         <p className="empty">
           {tab === 'open'
-            ? 'No one is waiting. Call the Lifeline number, or start a surge to see the queue fill.'
+            ? `No one is waiting. ${DEMO ? 'Run' : 'Call the Lifeline number, or start'} a surge to see the queue fill.`
             : tab === 'assigned' ? 'Assign a team from a waiting case and it moves here.' : 'Rescued and closed cases from the last two hours show here.'}
         </p>
       )}

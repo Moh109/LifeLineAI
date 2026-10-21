@@ -1,4 +1,8 @@
 // Shared helpers: API calls, priority math (mirrors backend/app/scoring.py), formatting.
+import { demoApi } from './demo/store'
+
+// Static demo site (npm run build): sample cases in the browser, no backend. npm run build:live is the real dashboard.
+export const DEMO = import.meta.env.MODE === 'demo'
 
 // Dispatch key: typed in once by the dispatcher and kept in this browser only. Never part of the build.
 const KEY_STORE = 'lifeline_dispatch_key'
@@ -20,6 +24,7 @@ export function setDispatchKey(key) {
 }
 
 export async function api(path, { method = 'GET', body } = {}) {
+  if (DEMO) return demoApi(path, { method, body })
   const headers = {}
   if (body) headers['Content-Type'] = 'application/json'
   const key = getDispatchKey()

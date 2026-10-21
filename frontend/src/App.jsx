@@ -4,11 +4,15 @@ import IntakeDialog from './IntakeDialog'
 import MapView from './MapView'
 import Queue from './Queue'
 import SurgeChart from './SurgeChart'
-import { api, getDispatchKey, setDispatchKey, sortCases } from './lib'
+import DemoBanner from './demo/DemoBanner'
+import { useDemo } from './demo/useDemo'
+import { DEMO, api, getDispatchKey, setDispatchKey, sortCases } from './lib'
 import { useLive } from './useLive'
 
+const useCases = DEMO ? useDemo : useLive
+
 export default function App() {
-  const { cases, stats, features, connected, surge, alerts, dismissAlert, mergeCase } = useLive()
+  const { cases, stats, features, connected, surge, alerts, dismissAlert, mergeCase, ...demo } = useCases()
   const [selectedId, setSelectedId] = useState(null)
   const [draft, setDraft] = useState(null)
   const [now, setNow] = useState(Date.now())
@@ -18,6 +22,7 @@ export default function App() {
 
   // Ask for the dispatch key if the server wants one (any 401 fires 'lifeline:need-key')
   useEffect(() => {
+    if (DEMO) return undefined
     const ask = () => setNeedKey(true)
     window.addEventListener('lifeline:need-key', ask)
     api('/api/stats').catch(() => {})
@@ -46,7 +51,8 @@ export default function App() {
 
   async function startSurge() {
     try {
-      await api('/api/demo/surge', { method: 'POST', body: { count: 300, seconds: 60 } })
+      if (DEMO) await demo.startSurge({ count: 300, seconds: 60 })
+      else await api('/api/demo/surge', { method: 'POST', body: { count: 300, seconds: 60 } })
       notify('Surge started: 300 calls over the next minute.')
     } catch (err) {
       notify(err.message, 'error')
@@ -55,7 +61,7 @@ export default function App() {
 
   async function clearSimulated() {
     try {
-      const r = await api('/api/demo/reset', { method: 'POST' })
+      const r = DEMO ? demo.clearSimulated() : await api('/api/demo/reset', { method: 'POST' })
       if (selected?.source === 'simulated') setSelectedId(null)
       notify(`Removed ${r.removed} simulated cases.`)
     } catch (err) {
@@ -66,13 +72,14 @@ export default function App() {
   const simulatedCount = list.filter((c) => c.source === 'simulated').length
 
   return (
-    <div className="app">
+    <div className={`app${DEMO ? ' has-banner' : ''}`}>
+      {DEMO && <DemoBanner />}
       <header className="topbar">
         <div className="brand">
           <h1>Lifeline</h1>
           <p>Overflow rescue line for Houston 911</p>
           <p className={`conn ${connected ? 'on' : 'off'}`} role="status">
-            <span className="dot" aria-hidden="true" />{connected ? 'Live' : 'Reconnecting'}
+            <span className="dot" aria-hidden="true" />{DEMO ? 'Demo, sample data' : connected ? 'Live' : 'Reconnecting'}
           </p>
         </div>
 
@@ -93,7 +100,8 @@ export default function App() {
 
         <div className="top-actions">
           <button onClick={() => setIntakeOpen(true)} disabled={features && !features.gemini}
-            title={features && !features.gemini ? 'Add GEMINI_API_KEY on the server to use this' : undefined}>
+            title={DEMO ? 'Needs the live backend (Gemini reads the post), so it is off in the demo'
+              : features && !features.gemini ? 'Add GEMINI_API_KEY on the server to use this' : undefined}>
             Add from a post
           </button>
           <button className="surge-btn" onClick={startSurge} disabled={surge}>

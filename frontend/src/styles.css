@@ -271,3 +271,13 @@ button.link { border: 0; padding: 0; background: none; color: var(--water); text
 @media (prefers-reduced-motion: reduce) {
   .alert, .pulse-pin::after { animation: none; }
 }
+
+/* ---------- static demo site ---------- */
+
+.app.has-banner { grid-template-rows: auto auto 1fr; }
+.demo-banner {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 18px;
+  padding: 8px 20px; background: var(--water-tint); border-bottom: 1px solid var(--line); font-size: 14px;
+}
+.demo-links { display: flex; gap: 16px; }
+.demo-banner a { color: var(--water); font-weight: 600; }
